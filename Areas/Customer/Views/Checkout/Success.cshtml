@@ -1,0 +1,181 @@
+@model QuanLyBanHang.Models.SalesInvoice
+@{
+    ViewData["Title"] = "Đặt hàng thành công";
+}
+@section Styles{
+    <link rel="stylesheet" href="~/css/customer/Checkout.css" />
+}
+
+<div class="checkout-page">
+    <div class="container" style="max-width:800px;">
+
+        <!-- SUCCESS HEADER -->
+        <div class="checkout-header">
+            <div class="success-icon">
+                <i class="bi bi-check2-circle"></i>
+            </div>
+            <h2 style="color:#065f46;">Đặt hàng thành công!</h2>
+            <p>Cảm ơn bạn đã mua hàng. Đơn hàng <strong style="color:var(--co-red)">@Model.Code</strong> đang được xử lý.</p>
+        </div>
+
+        <!-- ORDER TIMELINE -->
+        <div class="checkout-card mb-3">
+            <div class="section-title">
+                <i class="bi bi-clock-history"></i>
+                Trạng thái đơn hàng
+            </div>
+            <div class="order-timeline">
+                <div class="timeline-item completed">
+                    <div class="timeline-dot"><i class="bi bi-check2"></i></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Đơn hàng đã đặt</div>
+                        <div class="timeline-time">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                    </div>
+                </div>
+                <div class="timeline-item @(Model.Status == "Pending" ? "active" : Model.Status != "Cancelled" ? "completed" : "")">
+                    <div class="timeline-dot"><i class="bi bi-clock"></i></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Chờ xác nhận</div>
+                        <div class="timeline-time">Đang chờ cửa hàng xác nhận</div>
+                    </div>
+                </div>
+                <div class="timeline-item @(Model.Status is "Confirmed" or "Shipped" or "Completed" ? "completed" : "")">
+                    <div class="timeline-dot"><i class="bi bi-box-seam"></i></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Đang đóng gói</div>
+                        <div class="timeline-time">@(Model.Status is "Confirmed" or "Shipped" or "Completed" ? "Đã đóng gói" : "Chờ xử lý")</div>
+                    </div>
+                </div>
+                <div class="timeline-item @(Model.Status is "Shipped" or "Completed" ? "completed" : "")">
+                    <div class="timeline-dot"><i class="bi bi-truck"></i></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Đang giao hàng</div>
+                        <div class="timeline-time">@(Model.Status is "Shipped" or "Completed" ? "Đang vận chuyển" : "Chờ xử lý")</div>
+                    </div>
+                </div>
+                <div class="timeline-item @(Model.Status == "Completed" ? "completed" : "")">
+                    <div class="timeline-dot"><i class="bi bi-flag-fill"></i></div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">Giao thành công</div>
+                        <div class="timeline-time">@(Model.Status == "Completed" ? "Hoàn thành" : "Chờ xử lý")</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BILL -->
+        <div class="checkout-card mb-3">
+            <div class="section-title">
+                <i class="bi bi-receipt"></i>
+                Hóa đơn
+                <span class="ms-auto fw-bold" style="color:var(--co-primary);font-size:16px;">@Model.Code</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th class="text-center">SL</th>
+                            <th class="text-end">Đơn giá</th>
+                            <th class="text-end">Thành tiền</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var i in Model.Items)
+                        {
+                            <tr>
+                                <td><span class="fw-semibold">@(i.Product?.Name ?? $"#{i.ProductId}")</span></td>
+                                <td class="text-center">@i.Quantity</td>
+                                <td class="text-end">@string.Format("{0:N0}₫", i.UnitPrice)</td>
+                                <td class="text-end fw-semibold">@string.Format("{0:N0}₫", i.LineTotal)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+            <hr class="checkout-divider" />
+            <div class="summary-row">
+                <span>Tạm tính</span>
+                <strong>@string.Format("{0:N0}₫", Model.Items.Sum(i => i.LineTotal))</strong>
+            </div>
+            <div class="summary-row">
+                <span>Phí vận chuyển</span>
+                <strong>@string.Format("{0:N0}₫", Model.ShippingFee)</strong>
+            </div>
+            @if (Model.Discount > 0)
+            {
+                <div class="summary-row">
+                    <span>Giảm giá</span>
+                    <strong class="text-success">-@string.Format("{0:N0}₫", Model.Discount)</strong>
+                </div>
+            }
+            <hr class="checkout-divider" />
+            <div class="summary-total">
+                <span>Tổng cộng</span>
+                <strong>@string.Format("{0:N0}₫", Model.Total)</strong>
+            </div>
+        </div>
+
+        <!-- INFO -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-6">
+                <div class="info-card">
+                    <div class="info-title">
+                        <i class="bi bi-geo-alt"></i> Giao hàng
+                    </div>
+                    <div class="info-row">
+                        <i class="bi bi-person-fill"></i>
+                        <span>@Model.ReceiverName</span>
+                    </div>
+                    <div class="info-row">
+                        <i class="bi bi-telephone-fill"></i>
+                        <span>@Model.ShippingPhone</span>
+                    </div>
+                    <div class="info-row">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <span>@Model.ShippingAddress</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-card">
+                    <div class="info-title">
+                        <i class="bi bi-credit-card-2-front"></i> Thanh toán
+                    </div>
+                    <div class="info-row">
+                        <i class="bi bi-credit-card"></i>
+                        <span class="badge-status @(Model.PaymentMethod == "COD" ? "badge-warning" : "badge-info")">
+                            @SalesInvoice.DisplayPaymentMethod(Model.PaymentMethod)
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Trạng thái: </span>
+                        <span class="badge-status @(Model.PaymentStatus == "Paid" ? "badge-success" : "badge-warning")">@SalesInvoice.DisplayPaymentStatus(Model.PaymentStatus)</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.PaymentRef))
+                    {
+                        <div class="info-row">
+                            <i class="bi bi-hash"></i>
+                            <span>Mã GD: <code>@Model.PaymentRef</code></span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="actions-row">
+            <a class="action-btn action-secondary" asp-controller="Shop" asp-action="Index">
+                <i class="bi bi-bag me-1"></i>Tiếp tục mua sắm
+            </a>
+            @if (Model.PaymentStatus != "Paid" && (Model.PaymentMethod == "BANK" || Model.PaymentMethod == "WALLET"))
+            {
+                <a class="action-btn action-primary" asp-controller="Payment" asp-action="Pay" asp-route-id="@Model.Id">
+                    <i class="bi bi-credit-card me-1"></i>Thanh toán ngay
+                </a>
+            }
+        </div>
+
+    </div>
+</div>

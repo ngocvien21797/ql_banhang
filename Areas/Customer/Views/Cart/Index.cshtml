@@ -1,0 +1,317 @@
+@model List<QuanLyBanHang.ViewModels.CartLineVM>
+
+@{
+    ViewData["Title"] = "Giỏ hàng";
+    var subtotal = (decimal)(ViewBag.Subtotal ?? 0m);
+    var cartCount = (int)(ViewBag.CartCount ?? 0);
+}
+@section Styles{
+    <link rel="stylesheet" href="~/css/customer/Cart.css" />
+}
+
+<div class="cart-page">
+    <div class="container">
+
+        @if (Model.Count == 0)
+        {
+            <div class="cart-empty">
+                <div class="cart-empty-icon">
+                    <i class="bi bi-cart-x"></i>
+                </div>
+                <h4>Giỏ hàng đang trống</h4>
+                <p>Hãy thêm vài sản phẩm vào giỏ hàng nhé.</p>
+                <a class="cart-shop-btn" asp-controller="Shop" asp-action="Index">
+                    <i class="bi bi-bag me-1"></i>Mua sắm ngay
+                </a>
+            </div>
+        }
+        else
+        {
+            <div class="cart-header">
+                <div class="cart-header-left">
+                    <h2>Giỏ hàng của bạn</h2>
+                    <p id="cartCountLabel">@cartCount sản phẩm</p>
+                </div>
+                <a class="cart-back-btn" asp-controller="Shop" asp-action="Index">
+                    <i class="bi bi-arrow-left me-1"></i>Tiếp tục mua sắm
+                </a>
+            </div>
+
+            <div class="row g-4">
+
+                <!-- LEFT -->
+                <div class="col-lg-8">
+
+                    <div class="cart-card" id="cartItemsContainer">
+
+                        @for (int i = 0; i < Model.Count; i++)
+                        {
+                            var line = Model[i];
+
+                            <div class="cart-item" data-product-id="@line.Product.Id">
+                                <div class="cart-product">
+                                    <div class="cart-thumb">
+                                        <i class="bi bi-box-seam"></i>
+                                    </div>
+                                    <div class="cart-product-info">
+                                        <div class="cart-product-name">@line.Product.Name</div>
+                                        <div class="cart-product-meta">
+                                            @line.Product.Category?.Name • SKU: @line.Product.Sku
+                                        </div>
+                                        <div class="cart-stock" id="stock-@line.Product.Id">
+                                            <i class="bi bi-check-circle-fill"></i> Tồn kho: @line.Product.Stock
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="cart-price">@string.Format("{0:N0}₫", line.Product.Price)</div>
+
+                                <div class="cart-qty">
+                                    <button type="button" class="qty-btn qty-minus" data-id="@line.Product.Id">−</button>
+                                    <input type="number" class="qty-input" value="@line.Quantity"
+                                           data-id="@line.Product.Id" min="0" max="@(line.Product.Stock)" readonly />
+                                    <button type="button" class="qty-btn qty-plus" data-id="@line.Product.Id">+</button>
+                                </div>
+
+                                <div class="cart-total" id="lineTotal-@line.Product.Id">
+                                    @string.Format("{0:N0}₫", line.LineTotal)
+                                </div>
+
+                                <button type="button" class="cart-remove-btn" data-id="@line.Product.Id"
+                                        title="Xóa sản phẩm">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </div>
+                        }
+
+                    </div>
+
+                    <div class="cart-actions">
+                        <button class="cart-update-btn" id="refreshCartBtn">
+                            <i class="bi bi-arrow-repeat me-1"></i>Cập nhật
+                        </button>
+                        <button class="cart-clear-btn" id="clearCartBtn">
+                            <i class="bi bi-x-circle me-1"></i>Xóa tất cả
+                        </button>
+                    </div>
+
+                </div>
+
+                <!-- RIGHT -->
+                <div class="col-lg-4">
+
+                    <div class="cart-summary" id="cartSummary">
+                        <h4>Tóm tắt đơn hàng</h4>
+
+                    <!-- Coupon code input -->
+                    <div class="mb-3 p-2 bg-light rounded">
+                        <label class="form-label small fw-semibold"><i class="bi bi-ticket-perforated"></i> Mã khuyến mãi</label>
+                        <div class="input-group input-group-sm mb-1">
+                            <input type="text" id="cartVoucherInput" class="form-control" placeholder="Nhập mã KM..." list="voucherSuggestions">
+                            <datalist id="voucherSuggestions">
+                                @if (ViewBag.ActivePromotions is List<QuanLyBanHang.Models.Promotion> promos)
+                                {
+                                    foreach (var pm in promos)
+                                    {
+                                        <option value="@pm.Code" label="@(pm.DiscountType == "Percentage" ? $"Giảm {pm.DiscountValue}%" : $"Giảm {pm.DiscountValue:N0}₫")"></option>
+                                    }
+                                }
+                            </datalist>
+                            <button class="btn btn-outline-danger" type="button" onclick="applyCartVoucher()">Áp dụng</button>
+                        </div>
+                        <div id="cartVoucherResult" class="small"></div>
+                    </div>
+
+                        <div class="summary-row">
+                            <span>Tạm tính</span>
+                            <strong id="summarySubtotal">@string.Format("{0:N0}₫", subtotal)</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>Vận chuyển</span>
+                            <strong>0₫</strong>
+                        </div>
+
+                        <hr />
+                        <div class="summary-total">
+                            <span>Tổng cộng</span>
+                            <strong id="summaryTotal">@string.Format("{0:N0}₫", subtotal)</strong>
+                        </div>
+
+                        <a class="checkout-btn" asp-controller="Checkout" asp-action="Index">
+                            <i class="bi bi-credit-card-2-front me-1"></i>Thanh toán
+                        </a>
+
+                        <div class="summary-note">
+                            <i class="bi bi-shield-check me-1"></i>Demo phục vụ bài cuối kỳ
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        }
+
+    </div>
+</div>
+
+@section Scripts{
+    <script>
+        // ==================== AJAX QTY UPDATE ====================
+        async function updateQty(productId, newQty) {
+            if (newQty < 0) newQty = 0;
+            try {
+                const res = await fetch('@Url.Action("UpdateQty","Cart")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ productId, qty: newQty })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    if (newQty <= 0) {
+                        // Remove item row
+                        const row = document.querySelector(`.cart-item[data-product-id="${productId}"]`);
+                        if (row) row.remove();
+                        if (data.cartCount <= 0) location.reload();
+                    } else {
+                        // Update line total
+                        const lineTotal = document.getElementById('lineTotal-' + productId);
+                        if (lineTotal) {
+                            const price = parseFloat(lineTotal.dataset.price) || 0;
+                            lineTotal.textContent = (newQty * price).toLocaleString() + '₫';
+                        }
+                    }
+                    // Update summary
+                    document.getElementById('summarySubtotal').textContent = data.subtotal.toLocaleString() + '₫';
+                    document.getElementById('summaryTotal').textContent = data.total.toLocaleString() + '₫';
+                    document.getElementById('cartCountLabel').textContent = data.cartCount + ' sản phẩm';
+
+                    // Update stock display
+                    if (data.stocks) {
+                        for (const [pid, stock] of Object.entries(data.stocks)) {
+                            const stockEl = document.getElementById('stock-' + pid);
+                            if (stockEl) {
+                                stockEl.innerHTML = '<i class="bi bi-check-circle-fill"></i> Tồn kho: ' + stock;
+                                // Disable plus if stock reached
+                                const input = document.querySelector(`.qty-input[data-id="${pid}"]`);
+                                if (input && stock !== undefined) {
+                                    input.max = stock;
+                                    const plus = document.querySelector(`.qty-plus[data-id="${pid}"]`);
+                                    if (plus) plus.disabled = parseInt(input.value) >= stock;
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error('updateQty error', e);
+            }
+        }
+
+        async function removeItem(productId) {
+            if (!confirm('Xóa sản phẩm này khỏi giỏ hàng?')) return;
+            try {
+                const res = await fetch('@Url.Action("RemoveAjax","Cart")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ productId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const row = document.querySelector(`.cart-item[data-product-id="${productId}"]`);
+                    if (row) row.remove();
+                    document.getElementById('summarySubtotal').textContent = data.subtotal.toLocaleString() + '₫';
+                    document.getElementById('summaryTotal').textContent = data.total.toLocaleString() + '₫';
+                    document.getElementById('cartCountLabel').textContent = data.cartCount + ' sản phẩm';
+                    if (data.cartCount <= 0) location.reload();
+                }
+            } catch (e) {
+                console.error('removeItem error', e);
+            }
+        }
+
+        // ==================== VOUCHER ====================
+        function applyCartVoucher() {
+            const code = document.getElementById('cartVoucherInput').value.trim();
+            const result = document.getElementById('cartVoucherResult');
+            if (!code) { result.innerHTML = '<span class="text-muted">Vui lòng nhập mã</span>'; return; }
+
+            fetch('@Url.Action("CheckVoucher","Checkout")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `code=${encodeURIComponent(code)}&subtotal=0`
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    result.innerHTML = `<span class="text-success fw-semibold">${data.message}</span>`;
+                    sessionStorage.setItem('voucherCode', code);
+                } else {
+                    result.innerHTML = `<span class="text-danger">${data.message}</span>`;
+                    sessionStorage.removeItem('voucherCode');
+                }
+            })
+            .catch(() => result.innerHTML = '<span class="text-danger">Lỗi kết nối</span>');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const saved = sessionStorage.getItem('voucherCode');
+            if (saved) {
+                document.getElementById('cartVoucherInput').value = saved;
+                applyCartVoucher();
+            }
+        });
+
+        // ==================== EVENT LISTENERS ====================
+        document.querySelectorAll('.qty-plus').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.dataset.id;
+                const input = document.querySelector(`.qty-input[data-id="${id}"]`);
+                const max = parseInt(input.max) || 999;
+                const val = parseInt(input.value) || 0;
+                if (val < max) updateQty(id, val + 1);
+                else alert('Số lượng vượt quá tồn kho.');
+            });
+        });
+
+        document.querySelectorAll('.qty-minus').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.dataset.id;
+                const input = document.querySelector(`.qty-input[data-id="${id}"]`);
+                const val = parseInt(input.value) || 0;
+                if (val > 1) updateQty(id, val - 1);
+                else if (val === 1) removeItem(id);
+            });
+        });
+
+        document.querySelectorAll('.cart-remove-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+                removeItem(this.dataset.id);
+            });
+        });
+
+        // Store price per product for line total calc
+        document.querySelectorAll('.cart-item').forEach(item => {
+            const id = item.dataset.productId;
+            const totalEl = document.getElementById('lineTotal-' + id);
+            const priceEl = item.querySelector('.cart-price');
+            if (totalEl && priceEl) {
+                const price = parseFloat(priceEl.textContent.replace(/[^0-9]/g, '')) || 0;
+                totalEl.dataset.price = price;
+            }
+        });
+
+        // Clear cart
+        document.getElementById('clearCartBtn')?.addEventListener('click', async function () {
+            if (!confirm('Xóa tất cả sản phẩm trong giỏ hàng?')) return;
+            try {
+                await fetch('@Url.Action("Clear","Cart")', { method: 'POST' });
+                location.reload();
+            } catch (e) { console.error(e); }
+        });
+
+        // Refresh
+        document.getElementById('refreshCartBtn')?.addEventListener('click', function () {
+            location.reload();
+        });
+    </script>
+}

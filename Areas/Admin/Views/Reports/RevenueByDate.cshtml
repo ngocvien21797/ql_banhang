@@ -1,0 +1,205 @@
+@model IEnumerable<QuanLyBanHang.Areas.Admin.Controllers.ReportsController.RevenueRow>
+@{
+    ViewData["Title"] = "Báo cáo doanh thu";
+    var dataList = Model.ToList();
+}
+
+<div class="page-header">
+    <div>
+        <h3><i class="bi bi-bar-chart me-2"></i>Doanh thu theo ngày</h3>
+        <p>Báo cáo doanh thu chi tiết theo từng ngày</p>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="card-modern mb-3">
+    <div class="card-head">
+        <h5><i class="bi bi-funnel me-2"></i>Bộ lọc</h5>
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Từ ngày</label>
+                <input class="form-control" type="date" name="from" value="@ViewBag.From" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Đến ngày</label>
+                <input class="form-control" type="date" name="to" value="@ViewBag.To" />
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button class="btn btn-dark"><i class="bi bi-funnel me-1"></i>Lọc</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Summary stats -->
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-label">Tổng doanh thu</div>
+            <div class="stat-card-value">@string.Format("{0:N0}", ViewBag.TotalRevenue) đ</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-label">Tổng đơn hàng</div>
+            <div class="stat-card-value">@ViewBag.TotalOrders</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-label">TB mỗi đơn</div>
+            <div class="stat-card-value">@string.Format("{0:N0}", ViewBag.AvgOrder) đ</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-label">Ngày cao nhất</div>
+            <div class="stat-card-value">@string.Format("{0:N0}", ViewBag.BestDay) đ</div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart -->
+<div class="card-modern mb-3">
+    <div class="card-head">
+        <h5><i class="bi bi-graph-up me-2"></i>Biểu đồ doanh thu</h5>
+    </div>
+    <div class="card-body">
+        <canvas id="revenueChart" height="100"></canvas>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card-table">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Ngày</th>
+                    <th class="text-end">Số hóa đơn</th>
+                    <th class="text-end">Doanh thu</th>
+                    <th class="text-end">Tỷ lệ</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    var grandTotal = dataList.Sum(x => x.Total);
+                }
+                @foreach (var x in dataList)
+                {
+                    var pct = grandTotal > 0 ? (x.Total / grandTotal * 100) : 0;
+                    <tr class="@(x.Total == ViewBag.BestDay ? "table-danger" : "")">
+                        <td>@x.Date.ToString("dd/MM/yyyy")</td>
+                        <td class="text-end">
+                            <span class="badge bg-info">@x.Count</span>
+                        </td>
+                        <td class="text-end fw-semibold">@string.Format("{0:N0}", x.Total) đ</td>
+                        <td class="text-end">
+                            <div class="d-flex align-items-center justify-content-end gap-2">
+                                <div style="width:80px;height:6px;background:#e9ecef;border-radius:3px;overflow:hidden;">
+                                    <div style="width:@(pct)%;height:100%;background:var(--primary);border-radius:3px;"></div>
+                                </div>
+                                <span class="small text-muted">@pct.ToString("0.0")%</span>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const labels = [@Html.Raw(string.Join(",", dataList.Select(x => "\"" + x.Date.ToString("dd/MM") + "\"")))];
+    const revenues = [@Html.Raw(string.Join(",", dataList.Select(x => x.Total)))];
+    const orders = [@Html.Raw(string.Join(",", dataList.Select(x => x.Count)))];
+
+    // Cumulative revenue
+    let cum = 0;
+    const cumulative = revenues.map(v => { cum += v; return cum; });
+
+    new Chart(document.getElementById('revenueChart'), {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Doanh thu (VND)',
+                    data: revenues,
+                    backgroundColor: revenues.map(v => v === Math.max(...revenues) ? 'rgba(215,0,24,0.85)' : 'rgba(59,130,246,0.6)'),
+                    borderColor: revenues.map(v => v === Math.max(...revenues) ? '#d70018' : '#3b82f6'),
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    order: 3,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Lũy kế (VND)',
+                    data: cumulative,
+                    type: 'line',
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16,185,129,0.1)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#10b981',
+                    borderWidth: 2,
+                    order: 2,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Số đơn',
+                    data: orders,
+                    type: 'line',
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245,158,11,0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#f59e0b',
+                    borderWidth: 2,
+                    order: 1,
+                    yAxisID: 'y1'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'index' },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { usePointStyle: true, padding: 16 }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(ctx) {
+                            if (ctx.dataset.yAxisID === 'y1') {
+                                return ctx.dataset.label + ': ' + ctx.raw;
+                            }
+                            return ctx.dataset.label + ': ' + ctx.raw.toLocaleString('vi-VN') + ' đ';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    position: 'left',
+                    ticks: { callback: function(v) { return v.toLocaleString('vi-VN'); } }
+                },
+                y1: {
+                    beginAtZero: true,
+                    position: 'right',
+                    grid: { drawOnChartArea: false },
+                    ticks: { stepSize: 1 }
+                }
+            }
+        }
+    });
+</script>

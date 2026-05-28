@@ -1,0 +1,93 @@
+@{
+    ViewData["Title"] = "Tạo phiếu nhập";
+}
+
+<div class="page-header">
+    <div>
+        <h3><i class="bi bi-cart-plus me-2"></i>Tạo phiếu nhập</h3>
+        <p>Nhập hàng từ nhà cung cấp</p>
+    </div>
+</div>
+
+<form method="post">
+    <div class="form-card mb-3">
+        <div class="card-header"><h5 class="mb-0"><i class="bi bi-truck me-2"></i>Nhà cung cấp</h5></div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Nhà cung cấp</label>
+                    <select class="form-select" name="supplierId" asp-items="ViewBag.Suppliers">
+                        <option value="">-- (có thể để trống) --</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-boxes me-2"></i>Sản phẩm nhập</h5>
+            <button class="btn btn-outline-secondary btn-sm" type="button" id="btnAdd"><i class="bi bi-plus-lg me-1"></i>Thêm dòng</button>
+        </div>
+        <div class="p-0 card-body">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="itemsTable">
+                    <thead>
+                        <tr>
+                            <th>Sản phẩm</th>
+                            <th style="width:160px;">Số lượng</th>
+                            <th style="width:200px;">Đơn giá nhập</th>
+                            <th style="width:60px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <select class="form-select" name="productIds" asp-items="ViewBag.Products"></select>
+                            </td>
+                            <td>
+                                <input class="form-control" type="number" name="qtys" value="1" min="1" />
+                            </td>
+                            <td>
+                                <input class="form-control" type="number" name="unitCosts" value="0" min="0" step="1000" />
+                            </td>
+                            <td>
+                                <button class="btn btn-outline-danger btn-sm" type="button" onclick="removeRow(this)"><i class="bi bi-x"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer d-flex gap-2">
+            <button class="btn btn-dark"><i class="bi bi-check-lg me-1"></i>Lưu phiếu nhập</button>
+            <a class="btn btn-outline-secondary" asp-action="Index"><i class="bi bi-x-lg me-1"></i>Hủy</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+  const templateRow = () => `
+    <tr>
+      <td>
+        <select class="form-select" name="productIds">
+          ${document.querySelector('select[name="productIds"]').innerHTML}
+        </select>
+      </td>
+      <td><input class="form-control" type="number" name="qtys" value="1" min="1" /></td>
+      <td><input class="form-control" type="number" name="unitCosts" value="0" min="0" step="1000" /></td>
+      <td><button class="btn btn-outline-danger btn-sm" type="button" onclick="removeRow(this)"><i class="bi bi-x"></i></button></td>
+    </tr>`;
+
+  document.getElementById('btnAdd').addEventListener('click', () => {
+    document.querySelector('#itemsTable tbody').insertAdjacentHTML('beforeend', templateRow());
+  });
+
+  window.removeRow = (btn) => {
+    const tbody = document.querySelector('#itemsTable tbody');
+    if (tbody.children.length === 1) return;
+    btn.closest('tr').remove();
+  };
+</script>
+}

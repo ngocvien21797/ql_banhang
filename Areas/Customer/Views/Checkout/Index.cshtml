@@ -1,0 +1,470 @@
+@model QuanLyBanHang.ViewModels.CheckoutVM
+@{
+    ViewData["Title"] = "Thanh toán";
+    var hasError = ViewBag.ValidationErrors == true || TempData["Error"] != null;
+}
+@section Styles{
+    <link rel="stylesheet" href="~/css/customer/Checkout.css" />
+}
+
+<div class="checkout-page">
+    <div class="container">
+
+        <!-- HEADER -->
+        <div class="checkout-header">
+            <h2><i class="bi bi-credit-card me-2"></i>Thanh toán đơn hàng</h2>
+            <p>Kiểm tra thông tin và hoàn tất đặt hàng</p>
+        </div>
+
+        @if (TempData["Error"] != null)
+        {
+            <div class="checkout-alert alert alert-danger d-flex align-items-center gap-2">
+                <i class="bi bi-exclamation-triangle-fill flex-shrink-0"></i> @TempData["Error"]
+            </div>
+        }
+
+        <form method="post" asp-action="PlaceOrder" id="checkoutForm" class="checkout-form">
+            <div class="row g-4">
+
+                <!-- ========== LEFT COLUMN ========== -->
+                <div class="col-lg-7">
+
+                    <!-- RECEIVER INFO -->
+                    <div class="checkout-card mb-3">
+                        <div class="section-title">
+                            <i class="bi bi-person-fill"></i>
+                            Thông tin người nhận
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="form-label">Họ tên <span class="text-danger">*</span></label>
+                                <input class="checkout-input" name="ReceiverName" value="@Model.ReceiverName"
+                                       placeholder="Nhập họ tên" required />
+                                <span class="field-error" data-field="ReceiverName"></span>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                                <input class="checkout-input" name="Phone" value="@Model.Phone"
+                                       placeholder="090xxxxxxx" required type="tel" />
+                                <span class="field-error" data-field="Phone"></span>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Email</label>
+                                <input class="checkout-input" name="Email" value="@Model.Email"
+                                       placeholder="email@example.com" type="email" />
+                                <span class="field-error" data-field="Email"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SHIPPING ADDRESS -->
+                    <div class="checkout-card mb-3">
+                        <div class="section-title">
+                            <i class="bi bi-geo-alt-fill"></i>
+                            Địa chỉ giao hàng
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-sm-4">
+                                <label class="form-label">Tỉnh / Thành phố</label>
+                                <select class="checkout-input" name="Province" id="provinceSelect">
+                                    <option value="">— Chọn tỉnh/thành —</option>
+                                    @foreach (var p in Model.Provinces)
+                                    {
+                                        <option value="@p" selected="@(Model.Province == p)">@p</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label">Quận / Huyện</label>
+                                <input class="checkout-input" name="District" value="@Model.District"
+                                       placeholder="Quận / Huyện" />
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="form-label">Phường / Xã</label>
+                                <input class="checkout-input" name="Ward" value="@Model.Ward"
+                                       placeholder="Phường / Xã" />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Địa chỉ chi tiết <span class="text-danger">*</span></label>
+                                <input class="checkout-input" name="Address" value="@Model.Address"
+                                       placeholder="Số nhà, tên đường" required />
+                                <span class="field-error" data-field="Address"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SHIPPING METHOD -->
+                    <div class="checkout-card mb-3">
+                        <div class="section-title">
+                            <i class="bi bi-truck"></i>
+                            Phương thức vận chuyển
+                        </div>
+                        <div class="shipping-list">
+                            <label class="shipping-option @(Model.ShippingMethod == "standard" ? "selected" : "")">
+                                <input type="radio" name="ShippingMethod" value="standard"
+                                @(Model.ShippingMethod == "standard" ? "checked" : "") />
+                                <span class="radio-custom"></span>
+                                <div class="shipping-info">
+                                    <div class="shipping-title">
+                                        <i class="bi bi-box"></i> Giao hàng tiêu chuẩn
+                                    </div>
+                                    <div class="shipping-desc">Nhận hàng sau 3-5 ngày làm việc</div>
+                                </div>
+                                <div class="shipping-fee" data-method="standard">
+                                    <span class="shipping-fee-label">20,000đ – 35,000đ</span>
+                                </div>
+                            </label>
+                            <label class="shipping-option @(Model.ShippingMethod == "fast" ? "selected" : "")">
+                                <input type="radio" name="ShippingMethod" value="fast"
+                                @(Model.ShippingMethod == "fast" ? "checked" : "") />
+                                <span class="radio-custom"></span>
+                                <div class="shipping-info">
+                                    <div class="shipping-title">
+                                        <i class="bi bi-lightning-fill"></i> Giao nhanh
+                                    </div>
+                                    <div class="shipping-desc">Nhận hàng trong 1-2 ngày làm việc</div>
+                                </div>
+                                <div class="shipping-fee" data-method="fast">
+                                    <span class="shipping-fee-label">30,000đ – 50,000đ</span>
+                                </div>
+                            </label>
+                            <label class="shipping-option @(Model.ShippingMethod == "economy" ? "selected" : "")">
+                                <input type="radio" name="ShippingMethod" value="economy"
+                                @(Model.ShippingMethod == "economy" ? "checked" : "") />
+                                <span class="radio-custom"></span>
+                                <div class="shipping-info">
+                                    <div class="shipping-title">
+                                        <i class="bi bi-send"></i> Giao tiết kiệm
+                                    </div>
+                                    <div class="shipping-desc">Nhận hàng sau 5-7 ngày làm việc</div>
+                                </div>
+                                <div class="shipping-fee" data-method="economy">
+                                    <span class="shipping-fee-label">15,000đ – 25,000đ</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- PAYMENT METHOD -->
+                    <div class="checkout-card mb-3">
+                        <div class="section-title">
+                            <i class="bi bi-credit-card-2-front"></i>
+                            Phương thức thanh toán
+                        </div>
+                        <div class="payment-list">
+                            <label class="payment-option @(Model.PaymentMethod == "COD" ? "selected" : "")">
+                                <input type="radio" name="PaymentMethod" value="COD"
+                                @(Model.PaymentMethod == "COD" ? "checked" : "") />
+                                <span class="radio-custom"></span>
+                                <div class="payment-info">
+                                    <div class="payment-title">
+                                        <i class="bi bi-cash-stack"></i> COD — Thanh toán khi nhận hàng
+                                    </div>
+                                    <div class="payment-desc">Thanh toán trực tiếp khi shipper giao hàng đến bạn.</div>
+                                </div>
+                            </label>
+                            <label class="payment-option @(Model.PaymentMethod == "BANK" ? "selected" : "")">
+                                <input type="radio" name="PaymentMethod" value="BANK"
+                                @(Model.PaymentMethod == "BANK" ? "checked" : "") />
+                                <span class="radio-custom"></span>
+                                <div class="payment-info">
+                                    <div class="payment-title">
+                                        <i class="bi bi-bank"></i> Chuyển khoản ngân hàng
+                                    </div>
+                                    <div class="payment-desc">Thanh toán qua QR code hoặc nhập thông tin tài khoản.</div>
+                                </div>
+                            </label>
+                            <label class="payment-option @(Model.PaymentMethod == "WALLET" ? "selected" : "")">
+                                <input type="radio" name="PaymentMethod" value="WALLET"
+                                @(Model.PaymentMethod == "WALLET" ? "checked" : "") />
+                                <span class="radio-custom"></span>
+                                <div class="payment-info">
+                                    <div class="payment-title">
+                                        <i class="bi bi-wallet2"></i> Ví điện tử
+                                    </div>
+                                    <div class="payment-desc">Thanh toán bằng số dư ví của bạn.</div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- NOTE -->
+                    <div class="checkout-card mb-3">
+                        <div class="section-title">
+                            <i class="bi bi-chat-dots"></i>
+                            Ghi chú đơn hàng
+                        </div>
+                        <textarea class="checkout-input" name="Note" rows="3"
+                                  placeholder="Ghi chú cho người bán (không bắt buộc)">@Model.Note</textarea>
+                    </div>
+
+                </div>
+
+                <!-- ========== RIGHT COLUMN ========== -->
+                <div class="col-lg-5">
+
+                    <div class="checkout-summary">
+
+                        <h4><i class="bi bi-receipt me-2"></i>Đơn hàng</h4>
+
+                        <!-- PRODUCTS -->
+                        <div class="summary-products mb-3">
+                            @foreach (var line in Model.Lines)
+                            {
+                                <div class="summary-item">
+                                    <div class="summary-left">
+                                        <div class="summary-thumb">
+                                            <i class="bi bi-box"></i>
+                                        </div>
+                                        <div class="summary-details">
+                                            <div class="summary-name">@line.Product.Name</div>
+                                            <div class="summary-meta">@string.Format("{0:N0}₫", line.Product.Price) × @line.Quantity</div>
+                                        </div>
+                                    </div>
+                                    <div class="summary-price">@string.Format("{0:N0}₫", line.LineTotal)</div>
+                                </div>
+                            }
+                        </div>
+
+                        <!-- VOUCHER -->
+                        <div class="voucher-row">
+                            <input class="checkout-input" id="voucherInput" name="VoucherCode"
+                                   value="@Model.VoucherCode" placeholder="Nhập mã giảm giá" />
+                            <button type="button" id="applyVoucherBtn" class="voucher-btn">
+                                <i class="bi bi-ticket-perforated"></i> Áp dụng
+                            </button>
+                        </div>
+                        <div id="voucherResult" class="voucher-result"></div>
+
+                        <hr class="checkout-divider" />
+
+                        <!-- TOTALS -->
+                        <div class="summary-row">
+                            <span>Tạm tính</span>
+                            <strong id="displaySubtotal">@string.Format("{0:N0}₫", Model.Subtotal)</strong>
+                            <input type="hidden" id="hidSubtotal" value="@Model.Subtotal" />
+                        </div>
+                        <div class="summary-row">
+                            <span>Phí vận chuyển</span>
+                            <strong id="displayShipping">@string.Format("{0:N0}₫", Model.ShippingFee)</strong>
+                            <input type="hidden" id="hidShipping" value="@Model.ShippingFee" />
+                        </div>
+                        <div class="summary-row" id="discountRow" style="@(Model.Discount > 0 ? "" : "display:none")">
+                            <span>Giảm giá</span>
+                            <strong class="text-success" id="displayDiscount">-@string.Format("{0:N0}₫", Model.Discount)</strong>
+                            <input type="hidden" id="hidDiscount" value="@Model.Discount" />
+                        </div>
+                        <div class="summary-total">
+                            <span>Tổng cộng</span>
+                            <strong id="displayTotal">@string.Format("{0:N0}₫", Model.Total)</strong>
+                            <input type="hidden" id="hidTotal" value="@Model.Total" />
+                        </div>
+
+                        <!-- SUBMIT -->
+                        <button type="submit" class="checkout-submit-btn" id="placeOrderBtn">
+                            <i class="bi bi-check2-circle"></i> Đặt hàng
+                        </button>
+
+                        <div class="checkout-note">
+                            <i class="bi bi-shield-check me-1"></i>
+                            Demo phục vụ bài cuối kỳ — thông tin thanh toán được mô phỏng
+                        </div>
+
+                        <button type="button" class="checkout-back-btn"
+                                onclick="location.href='@Url.Action("Index","Cart")'">
+                            <i class="bi bi-arrow-left"></i> Quay lại giỏ hàng
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </form>
+
+    </div>
+</div>
+
+@section Scripts{
+    <script>
+        // ==================== REAL-TIME VALIDATION ====================
+        document.querySelectorAll('.checkout-input[required]').forEach(el => {
+            el.addEventListener('blur', function () {
+                const errSpan = document.querySelector(`.field-error[data-field="${this.name}"]`);
+                if (!errSpan) return;
+                if (!this.value.trim()) {
+                    this.classList.add('is-invalid');
+                    errSpan.textContent = 'Vui lòng nhập ' + this.placeholder || 'thông tin này';
+                    errSpan.style.display = 'block';
+                } else {
+                    this.classList.remove('is-invalid');
+                    errSpan.textContent = '';
+                    errSpan.style.display = 'none';
+                }
+            });
+        });
+
+        // Phone validation
+        const phoneInput = document.querySelector('input[name="Phone"]');
+        if (phoneInput) {
+            phoneInput.addEventListener('blur', function () {
+                const errSpan = document.querySelector('.field-error[data-field="Phone"]');
+                if (!errSpan) return;
+                const v = this.value.trim();
+                if (v && !/^0[0-9]{9,10}$/.test(v)) {
+                    this.classList.add('is-invalid');
+                    errSpan.textContent = 'SĐT gồm 10-11 số, bắt đầu bằng 0';
+                    errSpan.style.display = 'block';
+                } else if (!v) {
+                    this.classList.add('is-invalid');
+                    errSpan.textContent = 'Vui lòng nhập số điện thoại';
+                    errSpan.style.display = 'block';
+                } else {
+                    this.classList.remove('is-invalid');
+                    errSpan.textContent = '';
+                    errSpan.style.display = 'none';
+                }
+            });
+        }
+
+        // Email validation
+        const emailInput = document.querySelector('input[name="Email"]');
+        if (emailInput) {
+            emailInput.addEventListener('blur', function () {
+                const errSpan = document.querySelector('.field-error[data-field="Email"]');
+                if (!errSpan) return;
+                const v = this.value.trim();
+                if (v && !/^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/.test(v)) {
+                    this.classList.add('is-invalid');
+                    errSpan.textContent = 'Email không hợp lệ';
+                    errSpan.style.display = 'block';
+                } else {
+                    this.classList.remove('is-invalid');
+                    errSpan.textContent = '';
+                    errSpan.style.display = 'none';
+                }
+            });
+        }
+
+        // ==================== PAYMENT OPTION SELECT ====================
+        document.querySelectorAll('.payment-option').forEach(opt => {
+            opt.addEventListener('click', function () {
+                document.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input[type="radio"]').checked = true;
+            });
+        });
+
+        // ==================== SHIPPING OPTION SELECT ====================
+        document.querySelectorAll('.shipping-option').forEach(opt => {
+            opt.addEventListener('click', function () {
+                document.querySelectorAll('.shipping-option').forEach(o => o.classList.remove('selected'));
+                this.classList.add('selected');
+                this.querySelector('input[type="radio"]').checked = true;
+                updateShipping();
+            });
+        });
+
+        // ==================== UPDATE SHIPPING FEE ====================
+        async function updateShipping() {
+            const method = document.querySelector('input[name="ShippingMethod"]:checked')?.value || 'standard';
+            const province = document.querySelector('select[name="Province"]')?.value || '';
+            try {
+                const res = await fetch('@Url.Action("CalcShippingFee","Checkout")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ method, province })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    document.getElementById('displayShipping').textContent = data.fee.toLocaleString() + '₫';
+                    document.getElementById('hidShipping').value = data.fee;
+                    recalcTotal();
+                }
+            } catch (e) { console.log('calc shipping error', e); }
+        }
+
+        document.querySelector('select[name="Province"]')?.addEventListener('change', updateShipping);
+
+        // ==================== VOUCHER ====================
+        document.getElementById('applyVoucherBtn')?.addEventListener('click', applyVoucher);
+        document.getElementById('voucherInput')?.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { e.preventDefault(); applyVoucher(); }
+        });
+
+        async function applyVoucher() {
+            const code = document.getElementById('voucherInput')?.value || '';
+            const subtotal = parseFloat(document.getElementById('hidSubtotal')?.value || '0');
+            const resultDiv = document.getElementById('voucherResult');
+
+            if (!code.trim()) {
+                resultDiv.innerHTML = '<span class="text-muted small">Vui lòng nhập mã giảm giá.</span>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<span class="text-muted small"><i class="bi bi-hourglass-split me-1"></i>Đang kiểm tra...</span>';
+
+            try {
+                const res = await fetch('@Url.Action("CheckVoucher","Checkout")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ code, subtotal })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    resultDiv.innerHTML =
+                        `<span class="voucher-success"><i class="bi bi-check-circle-fill me-1"></i>${data.discountLabel}: -${data.discount.toLocaleString()}₫</span>`;
+                    document.getElementById('displayDiscount').textContent = '-' + data.discount.toLocaleString() + '₫';
+                    document.getElementById('hidDiscount').value = data.discount;
+                    document.getElementById('discountRow').style.display = 'flex';
+                } else {
+                    resultDiv.innerHTML =
+                        `<span class="voucher-error"><i class="bi bi-x-circle-fill me-1"></i>${data.message}</span>`;
+                    document.getElementById('displayDiscount').textContent = '-0₫';
+                    document.getElementById('hidDiscount').value = 0;
+                    document.getElementById('discountRow').style.display = 'none';
+                }
+                recalcTotal();
+            } catch (e) {
+                resultDiv.innerHTML = '<span class="voucher-error"><i class="bi bi-exclamation-circle me-1"></i>Lỗi kết nối, vui lòng thử lại.</span>';
+            }
+        }
+
+        // ==================== AUTO-FILL VOUCHER FROM CART ====================
+        document.addEventListener('DOMContentLoaded', function() {
+            const saved = sessionStorage.getItem('voucherCode');
+            if (saved && !document.getElementById('voucherInput').value) {
+                document.getElementById('voucherInput').value = saved;
+                setTimeout(applyVoucher, 500);
+            }
+        });
+
+        // Clear session storage after successful voucher application
+        const origApplyVoucher = applyVoucher;
+        applyVoucher = async function() {
+            await origApplyVoucher.apply(this, arguments);
+            const resultDiv = document.getElementById('voucherResult');
+            if (resultDiv && resultDiv.querySelector('.voucher-success')) {
+                sessionStorage.removeItem('voucherCode');
+            }
+        };
+
+        // ==================== RECALC TOTAL ====================
+        function recalcTotal() {
+            const subtotal = parseFloat(document.getElementById('hidSubtotal').value) || 0;
+            const shipping = parseFloat(document.getElementById('hidShipping').value) || 0;
+            const discount = parseFloat(document.getElementById('hidDiscount').value) || 0;
+            const total = subtotal + shipping - discount;
+            document.getElementById('displayTotal').textContent = total.toLocaleString() + '₫';
+            document.getElementById('hidTotal').value = total;
+        }
+
+        // ==================== LOADING ON SUBMIT ====================
+        document.getElementById('checkoutForm')?.addEventListener('submit', function () {
+            const btn = document.getElementById('placeOrderBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Đang xử lý...';
+        });
+    </script>
+}

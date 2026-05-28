@@ -1,0 +1,87 @@
+@model IEnumerable<QuanLyBanHang.Models.Promotion>
+@{
+    ViewData["Title"] = "Khuyến mãi";
+    var pagination = ViewBag.Pagination as QuanLyBanHang.ViewModels.PaginationModel;
+}
+
+<div class="page-header">
+    <div>
+        <h3><i class="bi bi-percent"></i> Khuyến mãi</h3>
+        <p>Quản lý chương trình khuyến mãi, chiết khấu</p>
+    </div>
+    <div class="page-actions">
+        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Thêm chương trình</a>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+}
+
+<div class="card-modern">
+    <div class="card-head">
+        <h5>Danh sách chương trình khuyến mãi</h5>
+        <span class="badge bg-primary">@(pagination?.TotalItems ?? 0)</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Tên chương trình</th>
+                        <th>Mã</th>
+                        <th>Loại</th>
+                        <th class="text-end">Giá trị</th>
+                        <th>Hiệu lực</th>
+                        <th class="text-center">Trạng thái</th>
+                        <th class="text-end" style="width:200px">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@item.Name</td>
+                            <td><code>@item.Code</code></td>
+                            <td><span class="badge bg-info">@(item.DiscountType == "Percentage" ? "% Giảm" : "Giảm tiền")</span></td>
+                            <td class="text-end">@(item.DiscountType == "Percentage" ? $"{item.DiscountValue}%" : item.DiscountValue.ToString("N0"))</td>
+                            <td><small class="text-muted">@item.StartDate.ToString("dd/MM") - @item.EndDate.ToString("dd/MM/yyyy")</small></td>
+                            <td class="text-center">
+                                @if (item.IsActive && item.EndDate >= DateTime.Now)
+                                {
+                                    <span class="status-badge success">Đang chạy</span>
+                                }
+                                else if (item.EndDate < DateTime.Now)
+                                {
+                                    <span class="status-badge secondary">Hết hạn</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge warning">Tạm dừng</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-dark" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    @if (!Model.Any())
+                    {
+                        <tr><td colspan="7" class="text-center text-muted py-4">Chưa có chương trình khuyến mãi nào</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @if (pagination != null && pagination.TotalPages > 1)
+    {
+        <div class="card-head" style="border-top:1px solid var(--border);border-bottom:none">
+            <small class="text-muted">Hiển thị @Model.Count() trên tổng số @pagination.TotalItems</small>
+            <partial name="_Pagination" model="pagination" />
+        </div>
+    }
+</div>

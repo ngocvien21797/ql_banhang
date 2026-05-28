@@ -1,0 +1,102 @@
+@model IEnumerable<QuanLyBanHang.Models.Product>
+@{
+    ViewData["Title"] = "Tồn kho";
+    var pagination = ViewBag.Pagination as QuanLyBanHang.ViewModels.PaginationModel;
+    var count = Model.Count();
+}
+
+<div class="page-header">
+    <div>
+        <h3><i class="bi bi-boxes me-2"></i>Tồn kho</h3>
+        <p>Theo dõi số lượng hàng tồn trong kho</p>
+    </div>
+</div>
+
+<form method="get" class="filters-bar">
+    <div class="form-group">
+        <label class="form-label">Tìm kiếm</label>
+        <input type="text" name="search" class="form-control form-control-sm" placeholder="Tìm theo tên, SKU..." value="@Context.Request.Query["search"]" style="width:200px">
+    </div>
+    <div class="form-group">
+        <label class="form-label">&nbsp;</label>
+        <button type="submit" class="btn btn-dark btn-sm"><i class="bi bi-search"></i> Lọc</button>
+        <a href="@Url.Action("Stock")" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg"></i> Xóa lọc</a>
+    </div>
+</form>
+
+<div class="row g-3 mb-3">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-label">Tổng SP</div>
+            <div class="stat-card-value">@ViewBag.TotalProducts</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-label">Tổng tồn</div>
+            <div class="stat-card-value">@ViewBag.TotalStock</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-label">Giá trị kho</div>
+            <div class="stat-card-value">@string.Format("{0:N0}", ViewBag.TotalValue) đ</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-card-label">Sắp hết</div>
+            <div class="stat-card-value text-danger">@ViewBag.LowStockCount</div>
+        </div>
+    </div>
+</div>
+
+<div class="card-table">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>SKU</th>
+                    <th>Tên</th>
+                    <th>Danh mục</th>
+                    <th class="text-end">Tồn</th>
+                    <th class="text-end">Giá vốn</th>
+                    <th class="text-end">Giá trị</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var p in Model)
+                {
+                    <tr class="@(p.Stock <= 5 ? "table-danger" : p.Stock <= 20 ? "table-warning" : "")">
+                        <td class="fw-semibold">@p.Sku</td>
+                        <td>@p.Name</td>
+                        <td>@(p.Category?.Name ?? "-")</td>
+                        <td class="text-end fw-bold">
+                            @if (p.Stock <= 5)
+                            {
+                                <span class="status-badge danger">@p.Stock</span>
+                            }
+                            else if (p.Stock <= 20)
+                            {
+                                <span class="status-badge warning">@p.Stock</span>
+                            }
+                            else
+                            {
+                                <span>@p.Stock</span>
+                            }
+                        </td>
+                        <td class="text-end">@string.Format("{0:N0}", p.Price) đ</td>
+                        <td class="text-end fw-semibold">@string.Format("{0:N0}", (decimal)p.Price * p.Stock) đ</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (pagination != null && pagination.TotalPages > 1)
+    {
+        <div class="card-head" style="border-top:1px solid var(--border);border-bottom:none">
+            <small class="text-muted">Hiển thị @count trên tổng số @pagination.TotalItems mục</small>
+            <partial name="_Pagination" model="pagination" />
+        </div>
+    }
+</div>

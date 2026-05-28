@@ -1,0 +1,47 @@
+@model QuanLyBanHang.ViewModels.PaginationModel
+@{
+    var totalPages = Model.TotalPages;
+    if (totalPages <= 1) return;
+    var startPage = Math.Max(1, Model.Page - 2);
+    var endPage = Math.Min(totalPages, Model.Page + 2);
+    var prevDisabled = Model.HasPrev ? "" : "disabled";
+    var nextDisabled = Model.HasNext ? "" : "disabled";
+}
+<nav aria-label="Page navigation" class="mt-3">
+    <ul class="pagination pagination-modern justify-content-end mb-0">
+        <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+            <a class="page-link" asp-action="@Model.Action" asp-controller="@Model.Controller" asp-all-route-data="@(Model.RouteValues as Dictionary<string,string>)" asp-route-page="1" asp-route-pageSize="@Model.PageSize" title="First">
+                <i class="fas fa-angle-double-left"></i>
+            </a>
+        </li>
+        <li class="page-item @prevDisabled">
+            <a class="page-link" asp-action="@Model.Action" asp-controller="@Model.Controller" asp-all-route-data="@(Model.RouteValues as Dictionary<string,string>)" asp-route-page="@(Model.Page - 1)" asp-route-pageSize="@Model.PageSize">
+                <i class="fas fa-angle-left"></i>
+            </a>
+        </li>
+        @if (startPage > 1)
+        {
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+        }
+        @for (var i = startPage; i <= endPage; i++)
+        {
+            <li class="page-item @(i == Model.Page ? "active" : "")">
+                <a class="page-link" asp-action="@Model.Action" asp-controller="@Model.Controller" asp-all-route-data="@(Model.RouteValues as Dictionary<string,string>)" asp-route-page="@i" asp-route-pageSize="@Model.PageSize">@i</a>
+            </li>
+        }
+        @if (endPage < totalPages)
+        {
+            <li class="page-item disabled"><span class="page-link">...</span></li>
+        }
+        <li class="page-item @nextDisabled">
+            <a class="page-link" asp-action="@Model.Action" asp-controller="@Model.Controller" asp-all-route-data="@(Model.RouteValues as Dictionary<string,string>)" asp-route-page="@(Model.Page + 1)" asp-route-pageSize="@Model.PageSize">
+                <i class="fas fa-angle-right"></i>
+            </a>
+        </li>
+        <li class="page-item @(Model.Page >= totalPages ? "disabled" : "")">
+            <a class="page-link" asp-action="@Model.Action" asp-controller="@Model.Controller" asp-all-route-data="@(Model.RouteValues as Dictionary<string,string>)" asp-route-page="@totalPages" asp-route-pageSize="@Model.PageSize" title="Last">
+                <i class="fas fa-angle-double-right"></i>
+            </a>
+        </li>
+    </ul>
+</nav>

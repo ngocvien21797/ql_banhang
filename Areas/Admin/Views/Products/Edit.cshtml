@@ -1,0 +1,75 @@
+@model QuanLyBanHang.Models.Product
+@{
+    ViewData["Title"] = "Sửa sản phẩm";
+}
+
+<div class="page-header">
+    <div>
+        <h3><i class="bi bi-pencil me-2"></i>Sửa sản phẩm</h3>
+        <p>Cập nhật thông tin sản phẩm</p>
+    </div>
+</div>
+
+<div class="form-card">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Thông tin sản phẩm</h5></div>
+    <div class="card-body">
+        <form method="post" enctype="multipart/form-data" asp-action="Edit">
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="ImagePath" />
+
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Ảnh sản phẩm</label>
+                    <input class="form-control" type="file" name="imageFile" accept="image/*" />
+                    @if (!string.IsNullOrWhiteSpace(Model.ImagePath))
+                    {
+                        <div class="mt-2">
+                            <div class="small text-muted mb-1">Ảnh hiện tại</div>
+                            <img src="@Model.ImagePath" alt="@Model.Name"
+                                 style="max-width:220px;height:auto;border-radius:10px;border:1px solid var(--border);" />
+                        </div>
+                    }
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">SKU</label>
+                    <input class="form-control" asp-for="Sku" />
+                    <span class="text-danger" asp-validation-for="Sku"></span>
+                </div>
+                <div class="col-md-8">
+                    <label class="form-label">Tên</label>
+                    <input class="form-control" asp-for="Name" />
+                    <span class="text-danger" asp-validation-for="Name"></span>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Danh mục</label>
+                    <select class="form-select" asp-for="CategoryId" asp-items="ViewBag.Categories">
+                        <option value="">-- Chọn --</option>
+                    </select>
+                    <span class="text-danger" asp-validation-for="CategoryId"></span>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Giá</label>
+                    <input class="form-control" asp-for="Price" />
+                    <span class="text-danger" asp-validation-for="Price"></span>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Tồn</label>
+                    <input class="form-control" asp-for="Stock" />
+                    <span class="text-danger" asp-validation-for="Stock"></span>
+                </div>
+                <div class="col-md-3 form-check ms-2 mt-4">
+                    <input class="form-check-input" asp-for="IsActive" />
+                    <label class="form-check-label" asp-for="IsActive">Active</label>
+                </div>
+            </div>
+            <div class="card-footer mt-3 px-0 d-flex gap-2">
+                <button class="btn btn-dark"><i class="bi bi-check-lg me-1"></i>Lưu</button>
+                <a class="btn btn-outline-secondary" asp-action="Index"><i class="bi bi-x-lg me-1"></i>Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

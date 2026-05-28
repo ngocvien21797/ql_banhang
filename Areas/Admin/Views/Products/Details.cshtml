@@ -1,0 +1,95 @@
+@model QuanLyBanHang.Models.Product
+@{
+    ViewData["Title"] = "Chi tiết sản phẩm";
+
+    string? imgSrc = null;
+    if (!string.IsNullOrWhiteSpace(Model.ImagePath))
+    {
+        var p = Model.ImagePath.Trim();
+        if (p.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            p.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
+            p.StartsWith("/"))
+        {
+            imgSrc = p;
+        }
+        else
+        {
+            imgSrc = "/" + p;
+        }
+    }
+}
+
+<div class="page-header">
+    <div>
+        <h3><i class="bi bi-eye me-2"></i>Chi tiết sản phẩm</h3>
+        <p>@Model.Name</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-outline-dark" asp-action="Edit" asp-route-id="@Model.Id"><i class="bi bi-pencil me-1"></i>Sửa</a>
+        <a class="btn btn-outline-secondary" asp-action="Index"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+    </div>
+</div>
+
+<div class="detail-card">
+    <div class="card-body">
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="fw-semibold mb-2">Ảnh sản phẩm</div>
+                @if (!string.IsNullOrWhiteSpace(imgSrc))
+                {
+                    <div style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:10px;">
+                        <img src="@imgSrc" alt="@Model.Name"
+                             style="width:100%;max-height:260px;object-fit:contain;display:block;" />
+                    </div>
+                    <div class="small text-muted mt-2">
+                        <a href="@imgSrc" target="_blank">Mở ảnh tab mới</a>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-muted">No image</div>
+                }
+
+            </div>
+            <div class="col-md-8">
+                <table class="table table-borderless mb-0">
+                    <tbody>
+                        <tr>
+                            <td class="text-muted" style="width:140px;">SKU</td>
+                            <td class="fw-semibold">@Model.Sku</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Tên</td>
+                            <td class="fw-semibold">@Model.Name</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Danh mục</td>
+                            <td>@(Model.Category?.Name ?? "-")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Giá</td>
+                            <td class="fw-semibold">@string.Format("{0:N0}", Model.Price) đ</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Tồn</td>
+                            <td>@Model.Stock</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Trạng thái</td>
+                            <td>
+                                @if (Model.IsActive)
+                                {
+                                    <span class="status-badge success">Đang bán</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge secondary">Ngừng bán</span>
+                                }
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

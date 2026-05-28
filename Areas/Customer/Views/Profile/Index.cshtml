@@ -1,0 +1,74 @@
+@model QuanLyBanHang.Models.Customer
+@{
+    ViewData["Title"] = "Tài khoản";
+}
+
+@if (TempData["Ok"] != null)
+{
+    <div class="alert alert-success" style="border-radius:10px;">@TempData["Ok"]</div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger" style="border-radius:10px;">@TempData["Error"]</div>
+}
+
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm" style="border-radius:12px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-person-circle me-2 text-danger"></i>Thông tin khách hàng
+                </h5>
+
+                <form method="post">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium small">Họ tên</label>
+                            <input class="form-control" name="Name" value="@Model.Name" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium small">Số điện thoại</label>
+                            <input class="form-control" name="Phone" value="@Model.Phone" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-medium small">Địa chỉ</label>
+                            <input class="form-control" name="Address" value="@Model.Address" />
+                        </div>
+                    </div>
+
+                    <button class="btn btn-danger sf-pill mt-4">
+                        <i class="bi bi-save me-2"></i>Lưu thay đổi
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm" style="border-radius:12px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4">
+                    <i class="bi bi-key me-2 text-danger"></i>Đổi mật khẩu
+                </h5>
+
+                <form method="post" asp-action="ChangePassword">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium small">Mật khẩu hiện tại</label>
+                        <input type="password" class="form-control" name="currentPassword" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium small">Mật khẩu mới</label>
+                        <input type="password" class="form-control" name="newPassword" required />
+                    </div>
+
+                    <button class="btn btn-outline-danger sf-pill">
+                        <i class="bi bi-key me-2"></i>Đổi mật khẩu
+                    </button>
+                </form>
+
+                <div class="small text-muted mt-3">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

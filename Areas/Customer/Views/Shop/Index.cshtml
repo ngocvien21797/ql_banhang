@@ -1,0 +1,258 @@
+@model List<QuanLyBanHang.Models.Product>
+@using QuanLyBanHang.Models
+@{
+    ViewData["Title"] = "Cửa hàng";
+    var categories = ViewBag.Categories as List<Category> ?? new List<Category>();
+    long? selectedCategory = ViewBag.CategoryId as long?;
+    string q = ViewBag.Query as string ?? "";
+    decimal? minPrice = ViewBag.MinPrice as decimal?;
+    decimal? maxPrice = ViewBag.MaxPrice as decimal?;
+    string sort = ViewBag.Sort as string ?? "name";
+
+    int page = ViewBag.Page ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 1;
+    int total = ViewBag.Total ?? 0;
+
+    var avgRatings = ViewBag.AvgRatings as Dictionary<long, (double Avg, int Count)> ?? new Dictionary<long, (double Avg, int Count)>();
+    var wishlistIds = ViewBag.WishlistIds as HashSet<long> ?? new HashSet<long>();
+
+    var isAuth = User.Identity?.IsAuthenticated == true;
+}
+
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
+    <div>
+        <h3 class="mb-1">Cửa hàng</h3>
+        <div class="sf-muted">Đang có <b>@total</b> sản phẩm</div>
+    </div>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
+        <a class="btn btn-sm btn-outline-danger sf-pill" asp-controller="Cart" asp-action="Index">
+            <i class="bi bi-cart3 me-1"></i>Giỏ hàng
+        </a>
+        @if (isAuth)
+        {
+            <a class="btn btn-sm btn-outline-danger sf-pill" asp-controller="Wishlist" asp-action="Index">
+                <i class="bi bi-heart me-1"></i>Yêu thích
+            </a>
+            <a class="btn btn-sm btn-outline-danger sf-pill" asp-controller="Shop" asp-action="MyOrders">
+                <i class="bi bi-receipt me-1"></i>Đơn của tôi
+            </a>
+        }
+    </div>
+</div>
+
+<form method="get" class="mb-3">
+    <div class="row g-2">
+        <div class="col-12 col-sm">
+            <div class="input-group input-group-sm">
+                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                <input class="form-control" name="q" value="@q" placeholder="Tìm sản phẩm..." />
+            </div>
+        </div>
+        <div class="col-6 col-sm">
+            <select class="form-select form-select-sm" name="categoryId">
+                <option value="">Tất cả danh mục</option>
+                @foreach (var c in categories)
+                {
+                    <option value="@c.Id" selected="@(selectedCategory == c.Id ? "selected" : null)">@c.Name</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-sm">
+            <select class="form-select form-select-sm" name="sort">
+                <option value="price_asc" selected="@(sort=="price_asc"?"selected":null)">Giá tăng dần</option>
+                <option value="price_desc" selected="@(sort=="price_desc"?"selected":null)">Giá giảm dần</option>
+                <option value="newest" selected="@(sort=="newest"?"selected":null)">Mới nhất</option>
+            </select>
+        </div>
+        <div class="col-6 col-sm-auto">
+            <input class="form-control form-control-sm" name="minPrice" value="@minPrice" placeholder="Giá từ" type="number" style="min-width:100px;" />
+        </div>
+        <div class="col-6 col-sm-auto">
+            <input class="form-control form-control-sm" name="maxPrice" value="@maxPrice" placeholder="Giá đến" type="number" style="min-width:100px;" />
+        </div>
+        <div class="col-auto">
+            <button class="btn btn-sm btn-danger sf-pill" type="submit"><i class="bi bi-funnel me-1"></i>Lọc</button>
+            <a class="btn btn-sm btn-outline-secondary sf-pill" asp-action="Index">Xoá</a>
+        </div>
+    </div>
+</form>
+
+@if (categories.Count > 0)
+{
+    <div class="d-flex flex-wrap gap-2 mb-3">
+        <a class="btn btn-sm btn-outline-danger sf-pill @(selectedCategory==null ? "active": "")" asp-action="Index"
+           asp-route-q="@q" asp-route-sort="@sort" asp-route-minPrice="@minPrice" asp-route-maxPrice="@maxPrice">Tất cả</a>
+        @foreach (var c in categories)
+        {
+            <a class="btn btn-sm btn-outline-danger sf-pill @(selectedCategory==c.Id ? "active": "")"
+               asp-action="Index" asp-route-categoryId="@c.Id" asp-route-q="@q" asp-route-sort="@sort"
+               asp-route-minPrice="@minPrice" asp-route-maxPrice="@maxPrice">@c.Name</a>
+        }
+    </div>
+}
+
+<div class="row g-3">
+@foreach (var p in Model)
+{
+    double avg = 0;
+    int reviewCount = 0;
+    if (avgRatings.TryGetValue(p.Id, out var ratingInfo))
+    {
+        avg = ratingInfo.Avg;
+        reviewCount = ratingInfo.Count;
+    }
+    var isLiked = wishlistIds.Contains(p.Id);
+
+    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+        <div class="card product-card h-100">
+            <div class="position-relative">
+                <a asp-action="Product" asp-route-id="@p.Id">
+                    <div class="sf-img" style="height:220px;">
+                        @if (!string.IsNullOrWhiteSpace(p.ImagePath))
+                        {
+                            <img src="@p.ImagePath" alt="@p.Name" />
+                        }
+                        else
+                        {
+                            <i class="bi bi-phone"></i>
+                        }
+                    </div>
+                </a>
+                @if (p.Stock > 0)
+                {
+                    <span class="badge bg-success position-absolute top-0 end-0 m-2">Còn @p.Stock</span>
+                }
+                else
+                {
+                    <span class="badge bg-secondary position-absolute top-0 end-0 m-2">Hết hàng</span>
+                }
+
+                @if (isAuth)
+                {
+                    <button class="btn btn-sm btn-light rounded-circle position-absolute top-0 start-0 m-2 wishlist-btn"
+                            data-product-id="@p.Id" style="width:32px;height:32px;z-index:5;"
+                            title="@(isLiked ? "Bỏ yêu thích" : "Thêm yêu thích")">
+                        <i class="bi @(isLiked ? "bi-heart-fill text-danger" : "bi-heart")"></i>
+                    </button>
+                }
+            </div>
+
+            <div class="card-body d-flex flex-column p-3">
+                <a asp-action="Product" asp-route-id="@p.Id" class="fw-bold text-dark text-decoration-none mb-1" style="font-size:15px;line-height:1.3;">
+                    @p.Name
+                </a>
+                <div class="small sf-muted mb-2">@p.Sku</div>
+
+                @if (reviewCount > 0)
+                {
+                    <div class="product-rating mb-2">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            if (i <= Math.Round(avg))
+                            {
+                                <i class="bi bi-star-fill"></i>
+                            }
+                            else if (i - 0.5 <= avg)
+                            {
+                                <i class="bi bi-star-half"></i>
+                            }
+                            else
+                            {
+                                <i class="bi bi-star" style="color:#ddd;"></i>
+                            }
+                        }
+                        <span>(@reviewCount)</span>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(p.Brand))
+                {
+                    <div class="small text-muted mb-1">@p.Brand</div>
+                }
+
+                <div class="product-price mb-3">@string.Format("{0:N0}", p.Price) đ</div>
+
+                @if (ViewBag.ActivePromotions is List<Promotion> promos)
+                {
+                    var productPromos = promos.Where(pm => pm.PromotionProducts == null || pm.PromotionProducts.Count == 0 || pm.PromotionProducts.Any(pp => pp.ProductId == p.Id)).ToList();
+                    foreach (var pm in productPromos.Take(1))
+                    {
+                        <div class="mt-1">
+                            @if (pm.DiscountType == "Percentage")
+                            {
+                                <span class="badge bg-danger">-@pm.DiscountValue%</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">-@pm.DiscountValue.ToString("N0")₫</span>
+                            }
+                            <small class="text-danger fw-semibold">@pm.Code</small>
+                        </div>
+                    }
+                }
+
+                <div class="mt-auto d-flex flex-column gap-2">
+                    <form method="post" asp-controller="Cart" asp-action="Add" class="w-100">
+                        <input type="hidden" name="productId" value="@p.Id" />
+                        <input type="hidden" name="qty" value="1" />
+                        <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                        <button class="btn btn-danger w-100 sf-pill @(p.Stock<=0 ? "disabled" : "")" type="submit">
+                            <i class="bi bi-cart-plus me-1"></i>Thêm vào giỏ
+                        </button>
+                    </form>
+
+                    <form method="post" asp-controller="Cart" asp-action="BuyNow" class="w-100">
+                        <input type="hidden" name="productId" value="@p.Id" />
+                        <input type="hidden" name="qty" value="1" />
+                        <button class="btn btn-warning w-100 sf-pill @(p.Stock<=0 ? "disabled" : "")" type="submit">
+                            <i class="bi bi-lightning-charge me-1"></i>Mua ngay
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+</div>
+
+@if (totalPages > 1)
+{
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i == page ? "active" : "")">
+                    <a class="page-link" asp-action="Index"
+                       asp-route-q="@q" asp-route-categoryId="@selectedCategory"
+                       asp-route-sort="@sort" asp-route-minPrice="@minPrice" asp-route-maxPrice="@maxPrice"
+                       asp-route-page="@i">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+@section Scripts {
+<script>
+    document.querySelectorAll('.wishlist-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const productId = this.dataset.productId;
+            const icon = this.querySelector('i');
+            fetch('@Url.Action("Toggle", "Wishlist")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'productId=' + productId
+            }).then(r => r.json()).then(data => {
+                if (data.liked) {
+                    icon.className = 'bi bi-heart-fill text-danger';
+                    this.title = 'Bỏ yêu thích';
+                } else {
+                    icon.className = 'bi bi-heart';
+                    this.title = 'Thêm yêu thích';
+                }
+            });
+        });
+    });
+</script>
+}

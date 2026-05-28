@@ -1,0 +1,11 @@
+@{
+    var role = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+
+    // 2 role:
+    // "1" = Admin
+    // "2" = Khách hàng
+    // Các trang ngoài Area (Account, AccessDenied, ...) dùng layout phù hợp theo role.
+    Layout = role == "1"
+        ? "~/Areas/Admin/Views/Shared/_LayoutAdmin.cshtml"
+        : "~/Areas/Customer/Views/Shared/_LayoutCustomer.cshtml";
+}

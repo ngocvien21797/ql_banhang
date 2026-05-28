@@ -1,0 +1,86 @@
+@model IEnumerable<QuanLyBanHang.Models.SalesInvoice>
+@{
+    ViewData["Title"] = "Đơn hàng";
+}
+
+<div class="page-header">
+    <div>
+        <h3><i class="bi bi-receipt me-2"></i>Đơn hàng</h3>
+        <p>Quản lý đơn hàng bán</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-dark" asp-action="Create"><i class="bi bi-plus-lg me-1"></i>Tạo đơn tại quầy</a>
+    </div>
+</div>
+
+<form method="get" class="filters-bar">
+    <div class="form-group">
+        <label class="form-label">Tìm kiếm</label>
+        <input type="text" name="search" class="form-control form-control-sm" placeholder="Mã, tên khách..." value="@Context.Request.Query["search"]" style="width:200px">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Trạng thái</label>
+        <select name="status" class="form-select form-select-sm" style="width:150px">
+            <option value="">Tất cả</option>
+            <option value="Pending" selected="@(Context.Request.Query["status"] == "Pending")">Pending</option>
+            <option value="Confirmed" selected="@(Context.Request.Query["status"] == "Confirmed")">Confirmed</option>
+            <option value="Shipped" selected="@(Context.Request.Query["status"] == "Shipped")">Shipped</option>
+            <option value="Completed" selected="@(Context.Request.Query["status"] == "Completed")">Completed</option>
+            <option value="Cancelled" selected="@(Context.Request.Query["status"] == "Cancelled")">Cancelled</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Thanh toán</label>
+        <select name="paymentStatus" class="form-select form-select-sm" style="width:150px">
+            <option value="">Tất cả</option>
+            <option value="Unpaid" selected="@(Context.Request.Query["paymentStatus"] == "Unpaid")">Unpaid</option>
+            <option value="Paid" selected="@(Context.Request.Query["paymentStatus"] == "Paid")">Paid</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label class="form-label">&nbsp;</label>
+        <button type="submit" class="btn btn-dark btn-sm"><i class="bi bi-search"></i> Lọc</button>
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg"></i> Xóa lọc</a>
+    </div>
+</form>
+
+<div class="card-modern">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Mã</th>
+                    <th>Khách</th>
+                    <th>Ngày</th>
+                    <th class="text-center">Trạng thái</th>
+                    <th class="text-center">Thanh toán</th>
+                    <th class="text-end">Tổng</th>
+                    <th class="text-end" style="width:140px">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var x in Model)
+                {
+                    <tr>
+                        <td class="fw-bold">@(!string.IsNullOrWhiteSpace(x.Code) ? x.Code : $"#{x.Id}")</td>
+                        <td>@(x.Customer?.Name ?? x.ReceiverName ?? "Khách lẻ")</td>
+                        <td>@x.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td class="text-center">
+                            <span class="status-badge @(x.Status=="Completed" ? "success" : x.Status=="Cancelled" ? "danger" : x.Status=="Shipped" ? "info" : "secondary")">@SalesInvoice.DisplayStatus(x.Status)</span>
+                        </td>
+                        <td class="text-center">
+                            <span class="status-badge @(x.PaymentStatus=="Paid" ? "success" : x.PaymentStatus=="Pending" ? "warning" : "secondary")">@SalesInvoice.DisplayPaymentMethod(x.PaymentMethod) • @SalesInvoice.DisplayPaymentStatus(x.PaymentStatus)</span>
+                        </td>
+                        <td class="text-end fw-bold">@string.Format("{0:N0}", x.Total) đ</td>
+                        <td class="text-end">
+                            <a class="btn btn-sm btn-outline-dark" asp-action="Details" asp-route-id="@x.Id"><i class="bi bi-eye me-1"></i>Chi tiết</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer text-end">
+        <partial name="_Pagination" model="ViewBag.Pagination" />
+    </div>
+</div>
