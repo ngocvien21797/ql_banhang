@@ -8,7 +8,7 @@
 Sửa `appsettings.json` -> `ConnectionStrings:DefaultConnection`.
 
 Ví dụ:
-`server=localhost;port=3306;database=ql_banhang;user=root;password=123456;`
+`server=localhost;port=3306;database=ql_banhang;user=;password=;`
 
 ## 3) Chạy dự án
 - Restore NuGet packages
