@@ -129,6 +129,8 @@ public class CheckoutController : Controller
         }
         vm.Total = vm.Subtotal + vm.ShippingFee - vm.Discount;
 
+        var uid = GetUserId();
+
         if (!ModelState.IsValid)
         {
             ViewBag.ValidationErrors = true;
@@ -137,12 +139,11 @@ public class CheckoutController : Controller
             return View("Index", vm);
         }
 
-        var uid = GetUserId();
         var customerId = await _db.Users.Where(u => u.Id == uid).Select(u => u.CustomerId).FirstOrDefaultAsync();
         if (customerId == null) return Forbid();
 
         var paymentMethod = (vm.PaymentMethod ?? "COD").ToUpperInvariant();
-        if (paymentMethod is not ("COD" or "BANK" or "WALLET")) paymentMethod = "COD";
+        if (paymentMethod is not ("COD" or "BANK")) paymentMethod = "COD";
 
         using var tx = await _db.Database.BeginTransactionAsync();
 
@@ -207,6 +208,7 @@ public class CheckoutController : Controller
 
             inv.Total = total + vm.ShippingFee - vm.Discount;
             await _db.SaveChangesAsync();
+
             await tx.CommitAsync();
 
             HttpContext.Session.Remove(CartKey);
@@ -284,6 +286,7 @@ public class CheckoutController : Controller
             message = $"Áp dụng mã <strong>{promo.Code}</strong> thành công!",
             discount = discount,
             discountDisplay = $"-{discount:N0}₫",
+            discountLabel = promo.Name,
             promoName = promo.Name,
             promoCode = promo.Code
         });

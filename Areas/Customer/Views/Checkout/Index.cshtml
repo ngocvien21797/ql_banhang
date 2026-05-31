@@ -174,17 +174,7 @@
                                     <div class="payment-desc">Thanh toán qua QR code hoặc nhập thông tin tài khoản.</div>
                                 </div>
                             </label>
-                            <label class="payment-option @(Model.PaymentMethod == "WALLET" ? "selected" : "")">
-                                <input type="radio" name="PaymentMethod" value="WALLET"
-                                @(Model.PaymentMethod == "WALLET" ? "checked" : "") />
-                                <span class="radio-custom"></span>
-                                <div class="payment-info">
-                                    <div class="payment-title">
-                                        <i class="bi bi-wallet2"></i> Ví điện tử
-                                    </div>
-                                    <div class="payment-desc">Thanh toán bằng số dư ví của bạn.</div>
-                                </div>
-                            </label>
+
                         </div>
                     </div>
 
@@ -251,7 +241,7 @@
                                                 <div class="promo-badge">
                                                     @if (p.DiscountType == "Percentage")
                                                     {
-                                                        <span>Giảm <strong>@p.DiscountValue%</strong></span>
+                                                        <span>Giảm <strong>@(((int)p.DiscountValue).ToString())%</strong></span>
                                                     }
                                                     else
                                                     {
@@ -259,8 +249,7 @@
                                                     }
                                                     @if (p.MinOrderValue.HasValue)
                                                     {
-                                                        <span class="mx-1">·</span>
-                                                        <span>Đơn từ @string.Format("{0:N0}₫", p.MinOrderValue)</span>
+                                                        <span class="promo-min-order">Đơn từ @string.Format("{0:N0}₫", p.MinOrderValue)</span>
                                                     }
                                                 </div>
                                             </div>
@@ -507,6 +496,7 @@
             const total = subtotal + shipping - discount;
             document.getElementById('displayTotal').textContent = total.toLocaleString() + '₫';
             document.getElementById('hidTotal').value = total;
+
         }
 
         // ==================== LOADING ON SUBMIT ====================
