@@ -80,19 +80,6 @@ static async Task MigrateSchemaAsync(SalesDbContext db)
         try { await db.Database.ExecuteSqlRawAsync(sql); }
         catch { }
     }
-
-    // Add missing columns to Products (each wrapped in try-catch in case column exists)
-    foreach (var alterSql in new[]
-    {
-        "ALTER TABLE Products ADD COLUMN Description longtext CHARACTER SET utf8mb4 NULL",
-        "ALTER TABLE Products ADD COLUMN Brand varchar(100) CHARACTER SET utf8mb4 NULL",
-        "ALTER TABLE Products ADD COLUMN Specifications longtext CHARACTER SET utf8mb4 NULL",
-        "ALTER TABLE Products ADD COLUMN WarrantyMonths int NOT NULL DEFAULT 0",
-    })
-    {
-        try { await db.Database.ExecuteSqlRawAsync(alterSql); }
-        catch { }
-    }
 }
 
 

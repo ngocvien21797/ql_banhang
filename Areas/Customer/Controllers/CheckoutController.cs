@@ -27,6 +27,9 @@ public class CheckoutController : Controller
         var customer = await _db.Users.Where(u => u.Id == uid).Select(u => u.Customer).FirstOrDefaultAsync();
 
         var subtotal = lines.Sum(x => x.LineTotal);
+        var productIds = lines.Select(l => l.Product.Id).ToHashSet();
+        var applicablePromos = await LoadApplicablePromotionsAsync(productIds, subtotal);
+        ViewBag.ApplicablePromotions = applicablePromos;
 
         var vm = new CheckoutVM
         {
@@ -43,6 +46,24 @@ public class CheckoutController : Controller
         };
 
         return View(vm);
+    }
+
+    private async Task<List<Promotion>> LoadApplicablePromotionsAsync(HashSet<long> productIds, decimal subtotal)
+    {
+        var now = DateTime.Now;
+        var promos = await _db.Promotions
+            .Include(p => p.PromotionProducts)
+            .Where(p => p.IsActive && p.StartDate <= now && p.EndDate >= now)
+            .ToListAsync();
+
+        return promos.Where(p =>
+        {
+            if (p.MinOrderValue.HasValue && subtotal < p.MinOrderValue.Value)
+                return false;
+            if (p.PromotionProducts.Count > 0)
+                return p.PromotionProducts.Any(pp => productIds.Contains(pp.ProductId));
+            return true;
+        }).ToList();
     }
 
     [HttpPost]
@@ -111,6 +132,8 @@ public class CheckoutController : Controller
         if (!ModelState.IsValid)
         {
             ViewBag.ValidationErrors = true;
+            var productIds = lines.Select(l => l.Product.Id).ToHashSet();
+            ViewBag.ApplicablePromotions = await LoadApplicablePromotionsAsync(productIds, vm.Subtotal);
             return View("Index", vm);
         }
 

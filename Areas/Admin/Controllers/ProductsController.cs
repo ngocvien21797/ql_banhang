@@ -136,13 +136,16 @@ public class ProductsController : Controller
         var dbProduct = await _db.Products.FirstOrDefaultAsync(x => x.Id == id);
         if (dbProduct == null) return NotFound();
 
-        // Update các field
         dbProduct.Sku = product.Sku;
         dbProduct.Name = product.Name;
         dbProduct.CategoryId = product.CategoryId;
         dbProduct.Price = product.Price;
         dbProduct.Stock = product.Stock;
         dbProduct.IsActive = product.IsActive;
+        dbProduct.Description = product.Description;
+        dbProduct.Brand = product.Brand;
+        dbProduct.Specifications = product.Specifications;
+        dbProduct.WarrantyMonths = product.WarrantyMonths;
 
         // Nếu có ảnh mới → upload + xoá ảnh cũ
         if (imageFile != null && imageFile.Length > 0)

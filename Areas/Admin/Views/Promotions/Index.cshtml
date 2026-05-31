@@ -10,7 +10,7 @@
         <p>Quản lý chương trình khuyến mãi, chiết khấu</p>
     </div>
     <div class="page-actions">
-        <a asp-action="Create" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Thêm chương trình</a>
+        <a asp-action="Create" class="btn btn-dark"><i class="bi bi-plus-lg"></i> Thêm chương trình</a>
     </div>
 </div>
 
@@ -18,6 +18,27 @@
 {
     <div class="alert alert-success alert-dismissible fade show">@TempData["Success"]<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
 }
+
+<form method="get" class="filters-bar">
+    <div class="form-group">
+        <label class="form-label">Tìm kiếm</label>
+        <input type="text" name="search" class="form-control form-control-sm" placeholder="Tên, mã khuyến mãi..." value="@Context.Request.Query["search"]" style="width:220px">
+    </div>
+    <div class="form-group">
+        <label class="form-label">Trạng thái</label>
+        <select name="status" class="form-select form-select-sm" style="width:150px">
+            <option value="">Tất cả</option>
+            <option value="active" selected="@(Context.Request.Query["status"] == "active")">Đang chạy</option>
+            <option value="expired" selected="@(Context.Request.Query["status"] == "expired")">Hết hạn</option>
+            <option value="paused" selected="@(Context.Request.Query["status"] == "paused")">Tạm dừng</option>
+        </select>
+    </div>
+    <div class="form-group">
+        <label class="form-label">&nbsp;</label>
+        <button type="submit" class="btn btn-dark btn-sm"><i class="bi bi-search"></i> Lọc</button>
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg"></i> Xóa lọc</a>
+    </div>
+</form>
 
 <div class="card-modern">
     <div class="card-head">

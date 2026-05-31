@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using QuanLyBanHang.Data;
 using QuanLyBanHang.Models;
@@ -59,88 +58,6 @@ public class SalesController : Controller
 
         if (inv == null) return NotFound();
         return View(inv);
-    }
-
-    public async Task<IActionResult> Create()
-    {
-        ViewBag.Customers = new SelectList(await _db.Customers.OrderBy(x => x.Name).ToListAsync(), "Id", "Name");
-        ViewBag.Products = new SelectList(await _db.Products.Where(p => p.IsActive).OrderBy(x => x.Name).ToListAsync(), "Id", "Name");
-        return View();
-    }
-
-    // Tạo đơn tại quầy (admin) – đơn giản, không cần thông tin vận chuyển
-    [HttpPost]
-    public async Task<IActionResult> Create(long? customerId, List<long> productIds, List<int> qtys)
-    {
-        if (productIds.Count == 0 || productIds.Count != qtys.Count)
-            return BadRequest("Dữ liệu sản phẩm không hợp lệ.");
-
-        using var tx = await _db.Database.BeginTransactionAsync();
-
-        var customer = customerId.HasValue ? await _db.Customers.FindAsync(customerId.Value) : null;
-
-        var inv = new SalesInvoice
-        {
-            CustomerId = customerId,
-            CreatedAt = DateTime.Now,
-            CreatedBy = GetUserId(),
-            Status = "Confirmed",
-            PaymentMethod = "COD",
-            PaymentStatus = "Unpaid",
-            ReceiverName = customer?.Name ?? "Khách lẻ",
-            ShippingPhone = customer?.Phone,
-            ShippingAddress = customer?.Address
-        };
-
-        _db.SalesInvoices.Add(inv);
-        await _db.SaveChangesAsync();
-
-        inv.Code = $"DH{inv.Id:000000}";
-        await _db.SaveChangesAsync();
-
-        decimal total = 0;
-
-        for (int i = 0; i < productIds.Count; i++)
-        {
-            var pid = productIds[i];
-            var q = qtys[i];
-
-            if (q <= 0) return BadRequest("Số lượng phải > 0");
-
-            var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == pid);
-            if (product == null) return BadRequest($"Không tìm thấy SP id={pid}");
-            if (product.Stock < q) return BadRequest($"Không đủ tồn kho cho {product.Name}");
-
-            product.Stock -= q;
-
-            var lineTotal = product.Price * q;
-            total += lineTotal;
-
-            _db.SalesItems.Add(new SalesItem
-            {
-                SalesInvoiceId = inv.Id,
-                ProductId = pid,
-                Quantity = q,
-                UnitPrice = product.Price,
-                LineTotal = lineTotal
-            });
-
-            _db.StockLedgers.Add(new StockLedger
-            {
-                ProductId = pid,
-                Type = "OUT",
-                Quantity = q,
-                RefType = "SALE",
-                RefId = inv.Id,
-                OccurredAt = DateTime.Now
-            });
-        }
-
-        inv.Total = total;
-        await _db.SaveChangesAsync();
-        await tx.CommitAsync();
-
-        return RedirectToAction(nameof(Details), new { id = inv.Id });
     }
 
     [HttpPost]

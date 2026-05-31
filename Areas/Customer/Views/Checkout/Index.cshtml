@@ -226,6 +226,55 @@
                             }
                         </div>
 
+                        <!-- KHUYẾN MÃI ÁP DỤNG -->
+                        @{
+                            var promos = ViewBag.ApplicablePromotions as List<QuanLyBanHang.Models.Promotion>;
+                        }
+                        @if (promos != null && promos.Count > 0)
+                        {
+                            <div class="promo-list mb-3">
+                                <div class="promo-list-title"><i class="bi bi-tags-fill me-1"></i>Khuyến mãi áp dụng</div>
+                                @foreach (var p in promos)
+                                {
+                                    <div class="promo-item">
+                                        <div class="promo-item-left">
+                                            <div class="promo-icon">
+                                                <i class="bi bi-ticket-perforated"></i>
+                                            </div>
+                                            <div>
+                                                <div class="promo-name">@p.Name</div>
+                                                <div class="promo-code">Mã: <strong>@p.Code</strong></div>
+                                                @if (!string.IsNullOrWhiteSpace(p.Description))
+                                                {
+                                                    <div class="promo-desc">@p.Description</div>
+                                                }
+                                                <div class="promo-badge">
+                                                    @if (p.DiscountType == "Percentage")
+                                                    {
+                                                        <span>Giảm <strong>@p.DiscountValue%</strong></span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span>Giảm <strong>@string.Format("{0:N0}₫", p.DiscountValue)</strong></span>
+                                                    }
+                                                    @if (p.MinOrderValue.HasValue)
+                                                    {
+                                                        <span class="mx-1">·</span>
+                                                        <span>Đơn từ @string.Format("{0:N0}₫", p.MinOrderValue)</span>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="promo-apply-btn"
+                                                data-code="@p.Code"
+                                                onclick="document.getElementById('voucherInput').value=this.dataset.code;applyVoucher();">
+                                            Áp dụng
+                                        </button>
+                                    </div>
+                                }
+                            </div>
+                        }
+
                         <!-- VOUCHER -->
                         <div class="voucher-row">
                             <input class="checkout-input" id="voucherInput" name="VoucherCode"

@@ -64,17 +64,6 @@ public class CustomersController : Controller
         return View(c);
     }
 
-    public IActionResult Create() => View();
-
-    [HttpPost]
-    public async Task<IActionResult> Create(CustomerEntity customer)
-    {
-        if (!ModelState.IsValid) return View(customer);
-        _db.Customers.Add(customer);
-        await _db.SaveChangesAsync();
-        return RedirectToAction(nameof(Index));
-    }
-
     public async Task<IActionResult> Edit(long id)
     {
         var c = await _db.Customers.FindAsync(id);

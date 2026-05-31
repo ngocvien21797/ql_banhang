@@ -13,16 +13,38 @@ public class PromotionsController : Controller
     private readonly SalesDbContext _db;
     public PromotionsController(SalesDbContext db) => _db = db;
 
-    public async Task<IActionResult> Index(int page = 1, int pageSize = 10)
+    public async Task<IActionResult> Index(string? search, string? status, int page = 1, int pageSize = 10)
     {
-        var query = _db.Promotions.Include(p => p.PromotionProducts).OrderByDescending(p => p.CreatedAt).AsQueryable();
+        var query = _db.Promotions.Include(p => p.PromotionProducts).AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(p => p.Name.Contains(search) || p.Code.Contains(search));
+
+        var now = DateTime.Now;
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            if (status == "active")
+                query = query.Where(p => p.IsActive && p.EndDate >= now);
+            else if (status == "expired")
+                query = query.Where(p => p.EndDate < now);
+            else if (status == "paused")
+                query = query.Where(p => !p.IsActive);
+        }
+
+        query = query.OrderByDescending(p => p.CreatedAt);
+
         var total = await query.CountAsync();
         var items = await query.Skip((page - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        var routeValues = new Dictionary<string, string>();
+        if (!string.IsNullOrWhiteSpace(search)) routeValues["search"] = search;
+        if (!string.IsNullOrWhiteSpace(status)) routeValues["status"] = status;
 
         ViewBag.Pagination = new QuanLyBanHang.ViewModels.PaginationModel
         {
             Page = page, PageSize = pageSize, TotalItems = total,
-            Action = "Index", Controller = "Promotions"
+            Action = "Index", Controller = "Promotions",
+            RouteValues = routeValues
         };
 
         return View(items);

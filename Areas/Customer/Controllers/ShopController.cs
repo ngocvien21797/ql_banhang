@@ -2,7 +2,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using QuanLyBanHang.Data;
+using QuanLyBanHang.Helpers;
 using QuanLyBanHang.Models;
+using QuanLyBanHang.ViewModels;
 using System.Security.Claims;
 
 namespace QuanLyBanHang.Areas.Customer.Controllers;
@@ -10,7 +12,12 @@ namespace QuanLyBanHang.Areas.Customer.Controllers;
 public class ShopController : Controller
 {
     private readonly SalesDbContext _db;
-    public ShopController(SalesDbContext db) => _db = db;
+    private readonly IWebHostEnvironment _env;
+    public ShopController(SalesDbContext db, IWebHostEnvironment env)
+    {
+        _db = db;
+        _env = env;
+    }
 
     [AllowAnonymous]
     public async Task<IActionResult> Index(
@@ -164,19 +171,51 @@ public class ShopController : Controller
 
     [Authorize(Roles = "2")]
     [HttpPost]
-    public async Task<IActionResult> AddReview(long productId, int rating, string? content)
+    public async Task<IActionResult> AddReview(long productId, int rating, string? content, IFormFile? imageFile)
     {
         var customerId = await GetCustomerIdAsync();
         if (customerId == null) return Forbid();
 
         if (rating < 1 || rating > 5) rating = 5;
 
+        // Kiểm tra khách hàng đã mua và nhận hàng thành công chưa
+        var hasPurchased = await _db.SalesInvoices
+            .AnyAsync(inv => inv.CustomerId == customerId
+                && inv.Status == "Completed"
+                && inv.Items.Any(i => i.ProductId == productId));
+
+        if (!hasPurchased)
+        {
+            TempData["Error"] = "Bạn cần mua sản phẩm và nhận hàng trước khi đánh giá.";
+            return RedirectToAction(nameof(Product), new { id = productId });
+        }
+
         var existing = await _db.Reviews
             .FirstOrDefaultAsync(r => r.ProductId == productId && r.CustomerId == customerId);
+
+        string? imagePath = existing?.ImagePath;
+
+        if (imageFile != null && imageFile.Length > 0)
+        {
+            var saveResult = await SaveReviewImageAsync(imageFile);
+            if (!saveResult.Success)
+            {
+                TempData["Error"] = saveResult.ErrorMessage ?? "Upload ảnh thất bại.";
+                return RedirectToAction(nameof(Product), new { id = productId });
+            }
+
+            // Xoá ảnh cũ nếu có
+            if (!string.IsNullOrWhiteSpace(imagePath))
+                DeleteImageIfExists(imagePath);
+
+            imagePath = saveResult.RelativePath;
+        }
+
         if (existing != null)
         {
             existing.Rating = rating;
             existing.Content = content;
+            existing.ImagePath = imagePath;
             existing.CreatedAt = DateTime.Now;
         }
         else
@@ -187,6 +226,7 @@ public class ShopController : Controller
                 CustomerId = customerId.Value,
                 Rating = rating,
                 Content = content,
+                ImagePath = imagePath,
                 CreatedAt = DateTime.Now
             });
         }
@@ -194,6 +234,176 @@ public class ShopController : Controller
         await _db.SaveChangesAsync();
         TempData["Ok"] = "Đánh giá của bạn đã được ghi nhận!";
         return RedirectToAction(nameof(Product), new { id = productId });
+    }
+
+    private async Task<(bool Success, string? RelativePath, string? ErrorMessage)> SaveReviewImageAsync(IFormFile file)
+    {
+        const long maxBytes = 5 * 1024 * 1024;
+        if (file.Length > maxBytes)
+            return (false, null, "Ảnh quá lớn (tối đa 5MB).");
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        if (!allowed.Contains(ext))
+            return (false, null, "Chỉ cho phép JPG/JPEG/PNG/WEBP.");
+
+        var dir = Path.Combine(_env.WebRootPath, "uploads", "reviews");
+        Directory.CreateDirectory(dir);
+
+        var fileName = $"{Guid.NewGuid():N}{ext}";
+        var physicalPath = Path.Combine(dir, fileName);
+
+        using (var stream = new FileStream(physicalPath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var relative = $"/uploads/reviews/{fileName}";
+        return (true, relative, null);
+    }
+
+    private void DeleteImageIfExists(string? imagePath)
+    {
+        if (string.IsNullOrWhiteSpace(imagePath)) return;
+
+        var rel = imagePath.TrimStart('/');
+        var full = Path.GetFullPath(Path.Combine(_env.WebRootPath, rel));
+        var root = Path.GetFullPath(_env.WebRootPath);
+        if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase)) return;
+
+        if (System.IO.File.Exists(full))
+            System.IO.File.Delete(full);
+    }
+
+    [Authorize(Roles = "2")]
+    [HttpPost]
+    public async Task<IActionResult> CancelOrder(long id)
+    {
+        var customerId = await GetCustomerIdAsync();
+        if (customerId == null) return Forbid();
+
+        var inv = await _db.SalesInvoices
+            .Include(x => x.Items)
+            .FirstOrDefaultAsync(x => x.Id == id && x.CustomerId == customerId);
+
+        if (inv == null) return NotFound();
+        if (inv.Status != "Pending")
+        {
+            TempData["Error"] = "Chỉ có thể hủy đơn hàng ở trạng thái 'Chờ xác nhận'.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        using var tx = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            inv.Status = "Cancelled";
+
+            foreach (var item in inv.Items)
+            {
+                var product = await _db.Products.FindAsync(item.ProductId);
+                if (product != null)
+                {
+                    product.Stock += item.Quantity;
+                }
+            }
+
+            await _db.SaveChangesAsync();
+
+            _db.Notifications.Add(new Notification
+            {
+                CustomerId = customerId.Value,
+                Title = $"Đã hủy đơn {inv.Code}",
+                Message = $"Đơn hàng {inv.Code} đã được hủy theo yêu cầu của bạn.",
+                Url = $"/Shop/Details/{inv.Id}",
+                CreatedAt = DateTime.Now
+            });
+            await _db.SaveChangesAsync();
+
+            await tx.CommitAsync();
+            TempData["Ok"] = "Đơn hàng đã được hủy thành công.";
+        }
+        catch
+        {
+            await tx.RollbackAsync();
+            TempData["Error"] = "Có lỗi xảy ra, vui lòng thử lại.";
+        }
+
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [Authorize(Roles = "2")]
+    [HttpPost]
+    public async Task<IActionResult> ConfirmReceived(long id)
+    {
+        var customerId = await GetCustomerIdAsync();
+        if (customerId == null) return Forbid();
+
+        var inv = await _db.SalesInvoices
+            .Include(x => x.Items).ThenInclude(i => i.Product)
+            .FirstOrDefaultAsync(x => x.Id == id && x.CustomerId == customerId);
+
+        if (inv == null) return NotFound();
+        if (inv.Status != "Shipped")
+        {
+            TempData["Error"] = "Đơn hàng chưa được giao, không thể xác nhận.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        inv.Status = "Completed";
+        inv.PaymentStatus = "Paid";
+        inv.PaidAt = DateTime.Now;
+        await _db.SaveChangesAsync();
+
+        _db.Notifications.Add(new Notification
+        {
+            CustomerId = customerId.Value,
+            Title = $"Đã nhận hàng - {inv.Code}",
+            Message = $"Bạn đã xác nhận đã nhận được đơn hàng {inv.Code}. Cảm ơn bạn đã mua sắm!",
+            Url = $"/Shop/Details/{inv.Id}",
+            CreatedAt = DateTime.Now
+        });
+        await _db.SaveChangesAsync();
+
+        TempData["Ok"] = "Xác nhận nhận hàng thành công! Bạn có thể đánh giá sản phẩm ngay bây giờ.";
+        return RedirectToAction(nameof(Details), new { id });
+    }
+
+    [Authorize(Roles = "2")]
+    [HttpPost]
+    public async Task<IActionResult> Reorder(long id)
+    {
+        var customerId = await GetCustomerIdAsync();
+        if (customerId == null) return Forbid();
+
+        var inv = await _db.SalesInvoices
+            .Include(x => x.Items).ThenInclude(i => i.Product)
+            .FirstOrDefaultAsync(x => x.Id == id && x.CustomerId == customerId);
+
+        if (inv == null) return NotFound();
+
+        var cart = new List<CartItemVM>();
+        foreach (var item in inv.Items)
+        {
+            if (item.Product != null && item.Product.IsActive)
+            {
+                var existing = cart.FirstOrDefault(c => c.ProductId == item.ProductId);
+                if (existing == null)
+                    cart.Add(new CartItemVM { ProductId = item.ProductId, Quantity = item.Quantity });
+                else
+                    existing.Quantity += item.Quantity;
+            }
+        }
+
+        if (cart.Count == 0)
+        {
+            TempData["Error"] = "Không có sản phẩm nào trong đơn hàng còn kinh doanh.";
+            return RedirectToAction(nameof(Details), new { id });
+        }
+
+        HttpContext.Session.SetObject("CART", cart);
+
+        TempData["Ok"] = "Đã thêm sản phẩm vào giỏ hàng!";
+        return RedirectToAction("Index", "Cart");
     }
 
     private long GetUserId()

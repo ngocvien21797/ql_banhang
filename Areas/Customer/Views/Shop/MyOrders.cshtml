@@ -1,4 +1,5 @@
 @model List<QuanLyBanHang.Models.SalesInvoice>
+@using QuanLyBanHang.Models
 @{
     ViewData["Title"] = "Đơn hàng của tôi";
 }
@@ -8,9 +9,7 @@
         <h4 class="mb-1 fw-bold"><i class="bi bi-receipt text-danger me-2"></i>Đơn hàng của tôi</h4>
         <div class="text-muted small">Tổng số: <b>@Model.Count</b> đơn hàng</div>
     </div>
-    <div class="d-flex gap-2">
-        <a class="btn btn-outline-danger sf-pill btn-sm" asp-action="Index"><i class="bi bi-grid me-1"></i>Sản phẩm</a>
-    </div>
+    <a class="btn btn-outline-danger sf-pill btn-sm" asp-action="Index"><i class="bi bi-grid me-1"></i>Mua sắm</a>
 </div>
 
 @if (Model.Count == 0)
@@ -31,40 +30,95 @@ else
         {
             var statusColor = x.Status switch { "Completed" => "success", "Cancelled" => "danger", "Shipped" => "primary", "Confirmed" => "info", _ => "secondary" };
             var payColor = x.PaymentStatus == "Paid" ? "success" : x.PaymentStatus == "Pending" ? "warning" : "secondary";
+            var firstItem = x.Items.FirstOrDefault();
 
-            <div class="card border-0 shadow-sm rounded-3">
-                <div class="card-body p-4">
-                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-2">
-                        <div>
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <span class="fw-bold text-danger fs-5">@(!string.IsNullOrWhiteSpace(x.Code) ? x.Code : $"#{x.Id}")</span>
-                                <span class="badge bg-@statusColor rounded-pill">@SalesInvoice.DisplayStatus(x.Status)</span>
-                                <span class="badge bg-@payColor rounded-pill">@SalesInvoice.DisplayPaymentMethod(x.PaymentMethod) - @SalesInvoice.DisplayPaymentStatus(x.PaymentStatus)</span>
-                            </div>
-                            <div class="text-muted small">@x.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+            <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+                <div class="card-body p-0">
+                    <div class="p-3 border-bottom d-flex flex-wrap justify-content-between align-items-center gap-2" style="background:#fafbfc;">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="fw-bold text-danger">@(!string.IsNullOrWhiteSpace(x.Code) ? x.Code : $"#{x.Id}")</span>
+                            <span class="badge bg-@statusColor rounded-pill" style="font-size:12px;padding:4px 12px;">@SalesInvoice.DisplayStatus(x.Status)</span>
+                            <span class="badge bg-@payColor rounded-pill" style="font-size:11px;padding:3px 10px;">@SalesInvoice.DisplayPaymentMethod(x.PaymentMethod) — @SalesInvoice.DisplayPaymentStatus(x.PaymentStatus)</span>
                         </div>
-                        <div class="text-end">
-                            <div class="fw-bold text-danger fs-5">@string.Format("{0:N0}", x.Total) đ</div>
-                            <div class="d-flex gap-2 mt-2 flex-wrap justify-content-end">
-                                <a class="btn btn-outline-danger sf-pill btn-sm" asp-action="Details" asp-route-id="@x.Id">
-                                    <i class="bi bi-eye me-1"></i>Chi tiết
-                                </a>
-                                @if ((x.PaymentMethod == "BANK" || x.PaymentMethod == "WALLET") && x.PaymentStatus != "Paid")
-                                {
-                                    <a class="btn btn-danger sf-pill btn-sm" asp-controller="Payment" asp-action="Pay" asp-route-id="@x.Id">
-                                        <i class="bi bi-credit-card me-1"></i>Thanh toán
-                                    </a>
-                                }
-                            </div>
-                        </div>
+                        <div class="text-muted small">@x.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
                     </div>
-                    <div class="mt-2 d-flex flex-wrap gap-3 small text-muted">
-                        <span><i class="bi bi-person me-1"></i>@x.ReceiverName</span>
-                        <span><i class="bi bi-truck me-1"></i>@SalesInvoice.DisplayPaymentMethod(x.PaymentMethod)</span>
-                        @if (x.Items.Count > 0)
+
+                    <div class="p-3">
+                        @if (firstItem?.Product != null)
                         {
-                            <span><i class="bi bi-box me-1"></i>@x.Items.Count sản phẩm</span>
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="bg-light rounded flex-shrink-0 d-flex align-items-center justify-content-center overflow-hidden" style="width:52px;height:52px;">
+                                    @if (!string.IsNullOrWhiteSpace(firstItem.Product.ImagePath))
+                                    {
+                                        <img src="@firstItem.Product.ImagePath" alt="" style="width:52px;height:52px;object-fit:cover;" />
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-box text-muted fs-4"></i>
+                                    }
+                                </div>
+                                <div class="flex-grow-1 minw-0">
+                                    <div class="fw-semibold text-truncate">@firstItem.Product.Name</div>
+                                    <div class="text-muted small">
+                                        @if (x.Items.Count > 1)
+                                        {
+                                            <span>@firstItem.Quantity x @string.Format("{0:N0}", firstItem.UnitPrice) đ</span>
+                                            <span class="mx-1">·</span>
+                                            <span>+@(x.Items.Count - 1) sản phẩm khác</span>
+                                        }
+                                        else
+                                        {
+                                            <span>@firstItem.Quantity x @string.Format("{0:N0}", firstItem.UnitPrice) đ</span>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="text-end flex-shrink-0">
+                                    <div class="fw-bold text-danger">@string.Format("{0:N0}", x.Total) đ</div>
+                                </div>
+                            </div>
                         }
+                        else
+                        {
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="fw-semibold">@x.Items.Count sản phẩm</span>
+                                <span class="fw-bold text-danger">@string.Format("{0:N0}", x.Total) đ</span>
+                            </div>
+                        }
+
+                        <div class="d-flex flex-wrap gap-2 small text-muted mb-2">
+                            <span><i class="bi bi-person me-1"></i>@x.ReceiverName</span>
+                            <span><i class="bi bi-truck me-1"></i>@SalesInvoice.DisplayPaymentMethod(x.PaymentMethod)</span>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2 pt-2 border-top">
+                            <a class="btn btn-outline-danger sf-pill btn-sm" asp-action="Details" asp-route-id="@x.Id">
+                                <i class="bi bi-eye me-1"></i>Chi tiết
+                            </a>
+                            @if ((x.PaymentMethod == "BANK" || x.PaymentMethod == "WALLET") && x.PaymentStatus != "Paid")
+                            {
+                                <a class="btn btn-danger sf-pill btn-sm" asp-controller="Payment" asp-action="Pay" asp-route-id="@x.Id">
+                                    <i class="bi bi-credit-card me-1"></i>Thanh toán
+                                </a>
+                            }
+                            @if (x.Status == "Pending")
+                            {
+                                <form asp-action="CancelOrder" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@x.Id" />
+                                    <button class="btn btn-outline-secondary sf-pill btn-sm" onclick="return confirm('Bạn có chắc muốn hủy đơn @x.Code?')">
+                                        <i class="bi bi-x-circle me-1"></i>Hủy
+                                    </button>
+                                </form>
+                            }
+                            @if (x.Status is "Completed" or "Cancelled")
+                            {
+                                <form asp-action="Reorder" method="post" class="d-inline">
+                                    <input type="hidden" name="id" value="@x.Id" />
+                                    <button class="btn btn-outline-danger sf-pill btn-sm">
+                                        <i class="bi bi-arrow-repeat me-1"></i>Mua lại
+                                    </button>
+                                </form>
+                            }
+                        </div>
                     </div>
                 </div>
             </div>

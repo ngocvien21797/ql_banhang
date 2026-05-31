@@ -87,8 +87,32 @@
                                 }
                             </td>
                         </tr>
+                        <tr>
+                            <td class="text-muted">Thương hiệu</td>
+                            <td class="fw-semibold">@(!string.IsNullOrWhiteSpace(Model.Brand) ? Model.Brand : "-")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Bảo hành</td>
+                            <td>@(Model.WarrantyMonths > 0 ? $"{Model.WarrantyMonths} tháng" : "-")</td>
+                        </tr>
                     </tbody>
                 </table>
+
+                @if (!string.IsNullOrWhiteSpace(Model.Description))
+                {
+                    <div class="mt-4">
+                        <div class="fw-semibold mb-2">Mô tả</div>
+                        <div class="text-muted small" style="white-space:pre-line">@Model.Description</div>
+                    </div>
+                }
+
+                @if (!string.IsNullOrWhiteSpace(Model.Specifications))
+                {
+                    <div class="mt-3">
+                        <div class="fw-semibold mb-2">Thông số kỹ thuật</div>
+                        <div class="text-muted small" style="white-space:pre-line">@Model.Specifications</div>
+                    </div>
+                }
             </div>
         </div>
     </div>

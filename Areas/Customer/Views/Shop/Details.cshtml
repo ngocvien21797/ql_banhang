@@ -1,146 +1,231 @@
 @model QuanLyBanHang.Models.SalesInvoice
+@using QuanLyBanHang.Models
 @{
     ViewData["Title"] = "Chi tiết đơn " + Model.Code;
     var subtotal = Model.Items.Sum(i => i.LineTotal);
+    var sc = Model.Status switch { "Completed" => "success", "Cancelled" => "danger", "Shipped" => "primary", "Confirmed" => "info", _ => "secondary" };
+    var pc = Model.PaymentStatus == "Paid" ? "success" : "warning";
 }
 
-<div class="d-flex align-items-center justify-content-between mb-4">
-    <div>
-        <h4 class="mb-0 fw-bold">Đơn hàng @Model.Code</h4>
-        <small class="text-muted">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <a asp-action="MyOrders" class="btn btn-outline-dark btn-sm rounded-pill px-3"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
+        <div>
+            <h4 class="mb-0 fw-bold">Đơn hàng @Model.Code</h4>
+            <small class="text-muted">@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+        </div>
     </div>
-    <a class="btn btn-outline-dark btn-sm rounded-pill px-3" asp-action="MyOrders">← Quay lại</a>
+    <div class="d-flex gap-2">
+        <span class="badge bg-@sc fs-6 px-3 py-2 rounded-pill">@SalesInvoice.DisplayStatus(Model.Status)</span>
+        <span class="badge bg-@pc fs-6 px-3 py-2 rounded-pill">@SalesInvoice.DisplayPaymentMethod(Model.PaymentMethod) — @SalesInvoice.DisplayPaymentStatus(Model.PaymentStatus)</span>
+    </div>
 </div>
 
 @if (TempData["Ok"] is string ok)
 {
-    <div class="alert alert-success py-2 small">@ok</div>
+    <div class="alert alert-success py-2 small border-0 rounded-3 shadow-sm">@ok</div>
 }
 @if (TempData["Error"] is string err)
 {
-    <div class="alert alert-danger py-2 small">@err</div>
+    <div class="alert alert-danger py-2 small border-0 rounded-3 shadow-sm">@err</div>
 }
 
-<div class="row g-3">
-    <!-- Tổng quan -->
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm mb-3">
-            <div class="card-body">
-                <div class="mb-2">
-                    <small class="text-muted d-block">Tổng thanh toán</small>
-                    <span class="fw-bold text-danger fs-3">@string.Format("{0:N0}", Model.Total) đ</span>
-                </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    @{
-                        var sc = Model.Status switch { "Completed" => "success", "Cancelled" => "danger", "Shipped" => "primary", "Confirmed" => "info", _ => "secondary" };
-                        var pc = Model.PaymentStatus == "Paid" ? "success" : "warning";
+<div class="row g-4">
+    <!-- Cột trái: thông tin + timeline -->
+    <div class="col-lg-5">
+        <!-- Timeline -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-4"><i class="bi bi-clock-history text-danger me-2"></i>Trạng thái đơn hàng</h6>
+                @{
+                    var steps = Model.Status == "Cancelled"
+                        ? new[] {
+                            ("Tạo đơn", Model.CreatedAt, true, "bi-cart-check"),
+                            ("Đã hủy", Model.CreatedAt.AddMinutes(30), true, "bi-x-circle")
+                        }
+                        : new[] {
+                            ("Chờ xác nhận", Model.CreatedAt, true, "bi-cart-check"),
+                            ("Đã xác nhận", Model.CreatedAt.AddMinutes(30), Model.Status != "Pending", "bi-check-lg"),
+                            ("Đang giao", Model.CreatedAt.AddHours(2), Model.Status is "Shipped" or "Completed", "bi-truck"),
+                            ("Hoàn thành", Model.CreatedAt.AddDays(1), Model.Status == "Completed", "bi-check2-all")
+                        };
+                }
+                <div class="position-relative">
+                    @foreach (var (label, time, done, icon) in steps)
+                    {
+                        <div class="d-flex @(done ? "opacity-100" : "opacity-50") mb-3 position-relative">
+                            <div class="d-flex flex-column align-items-center me-3" style="width:32px;">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center @(done ? "bg-success text-white" : "bg-light text-secondary")" style="width:32px;height:32px;font-size:14px;z-index:1;">
+                                    <i class="bi @icon"></i>
+                                </div>
+                                @if (steps[^1].Item1 != label)
+                                {
+                                    <div class="flex-grow-1" style="width:2px;background:@(done ? "#198754" : "#dee2e6");min-height:24px;"></div>
+                                }
+                            </div>
+                            <div class="pb-3">
+                                <div class="fw-semibold @(done ? "text-dark" : "text-muted")">@label</div>
+                                <div class="small text-muted">@time.ToString("dd/MM/yyyy HH:mm")</div>
+                            </div>
+                        </div>
                     }
-                    <span class="badge bg-@sc">@SalesInvoice.DisplayStatus(Model.Status)</span>
-                    <span class="badge bg-@pc">@SalesInvoice.DisplayPaymentMethod(Model.PaymentMethod) - @SalesInvoice.DisplayPaymentStatus(Model.PaymentStatus)</span>
                 </div>
-                @if ((Model.PaymentMethod == "BANK" || Model.PaymentMethod == "WALLET") && Model.PaymentStatus != "Paid")
-                {
-                    <a class="btn btn-danger w-100 mt-3 btn-sm rounded-pill" asp-controller="Payment" asp-action="Pay" asp-route-id="@Model.Id">Thanh toán</a>
-                }
-                @if (Model.PaymentStatus == "Paid" && Model.PaidAt.HasValue)
-                {
-                    <div class="small text-muted mt-2">Đã thanh toán @Model.PaidAt.Value.ToString("dd/MM/yyyy HH:mm")</div>
-                }
             </div>
         </div>
 
         <!-- Thông tin nhận hàng -->
-        <div class="card border-0 shadow-sm mb-3">
-            <div class="card-body">
-                <h6 class="fw-bold mb-3"><i class="bi bi-truck me-2"></i>Nhận hàng</h6>
-                <div class="small lh-lg">
-                    <div><i class="bi bi-person me-2 text-muted"></i>@Model.ReceiverName</div>
-                    <div><i class="bi bi-telephone me-2 text-muted"></i>@Model.ShippingPhone</div>
-                    <div><i class="bi bi-geo-alt me-2 text-muted"></i>@Model.ShippingAddress</div>
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-truck text-danger me-2"></i>Thông tin nhận hàng</h6>
+                <div class="d-flex flex-column gap-2 small">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;">
+                            <i class="bi bi-person text-muted"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">@Model.ReceiverName</div>
+                            <div class="text-muted">@Model.ShippingPhone</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start gap-2">
+                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;">
+                            <i class="bi bi-geo-alt text-muted"></i>
+                        </div>
+                        <div class="text-muted">@Model.ShippingAddress</div>
+                    </div>
                     @if (!string.IsNullOrWhiteSpace(Model.Note))
                     {
-                        <div class="mt-2 pt-2 border-top"><i class="bi bi-chat me-2 text-muted"></i>@Model.Note</div>
+                        <div class="d-flex align-items-start gap-2">
+                            <div class="rounded-circle bg-light d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;">
+                                <i class="bi bi-chat text-muted"></i>
+                            </div>
+                            <div class="text-muted fst-italic">"@Model.Note"</div>
+                        </div>
                     }
                 </div>
             </div>
         </div>
 
-        <!-- Timeline -->
-        <div class="card border-0 shadow-sm">
-            <div class="card-body">
-                <h6 class="fw-bold mb-3"><i class="bi bi-clock-history me-2"></i>Trạng thái</h6>
-                <ul class="list-unstyled mb-0 small">
-                    @{
-                        var steps = Model.Status == "Cancelled"
-                            ? new[] { ("Tạo đơn", Model.CreatedAt, true), ("Đã hủy", Model.CreatedAt.AddMinutes(30), true) }
-                            : new[] { ("Chờ xác nhận", Model.CreatedAt, true), ("Đã xác nhận", Model.CreatedAt.AddMinutes(30), Model.Status != "Pending"), ("Đang giao", Model.CreatedAt.AddHours(2), Model.Status is "Shipped" or "Completed"), ("Hoàn thành", Model.CreatedAt.AddDays(1), Model.Status == "Completed") };
-                    }
-                    @foreach (var (label, time, done) in steps)
+        <!-- Hành động -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-lightning text-danger me-2"></i>Thao tác</h6>
+                <div class="d-flex flex-column gap-2">
+                    @if ((Model.PaymentMethod == "BANK" || Model.PaymentMethod == "WALLET") && Model.PaymentStatus != "Paid")
                     {
-                        <li class="d-flex align-items-center gap-2 mb-2 @(!done ? "opacity-50" : "")">
-                            <i class="bi @(done ? "bi-check-circle-fill text-success" : "bi-circle text-secondary")"></i>
-                            <span>@label</span>
-                            <span class="text-muted ms-auto">@time.ToString("dd/MM HH:mm")</span>
-                        </li>
+                        <a class="btn btn-danger w-100 rounded-pill" asp-controller="Payment" asp-action="Pay" asp-route-id="@Model.Id">
+                            <i class="bi bi-credit-card me-1"></i>Thanh toán ngay
+                        </a>
                     }
-                </ul>
+                    @if (Model.Status == "Pending")
+                    {
+                        <form asp-action="CancelOrder" method="post">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button class="btn btn-outline-secondary w-100 rounded-pill" onclick="return confirm('Bạn có chắc muốn hủy đơn hàng này?')">
+                                <i class="bi bi-x-circle me-1"></i>Hủy đơn hàng
+                            </button>
+                        </form>
+                    }
+                    @if (Model.Status == "Shipped")
+                    {
+                        <form asp-action="ConfirmReceived" method="post">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button class="btn btn-success w-100 rounded-pill py-2 fw-bold" onclick="return confirm('Xác nhận bạn đã nhận được hàng?')">
+                                <i class="bi bi-check-lg me-1"></i>Đã nhận được hàng
+                            </button>
+                        </form>
+                    }
+                    @if (Model.Status is "Completed" or "Cancelled")
+                    {
+                        <form asp-action="Reorder" method="post">
+                            <input type="hidden" name="id" value="@Model.Id" />
+                            <button class="btn btn-outline-danger w-100 rounded-pill">
+                                <i class="bi bi-arrow-repeat me-1"></i>Mua lại
+                            </button>
+                        </form>
+                    }
+                    @if (Model.PaymentStatus == "Paid" && Model.PaidAt.HasValue)
+                    {
+                        <div class="text-center small text-success mt-2">
+                            <i class="bi bi-check-circle-fill me-1"></i>Đã thanh toán @Model.PaidAt.Value.ToString("dd/MM/yyyy HH:mm")
+                        </div>
+                    }
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Sản phẩm -->
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
+    <!-- Cột phải: sản phẩm + thanh toán -->
+    <div class="col-lg-7">
+        <!-- Danh sách sản phẩm -->
+        <div class="card border-0 shadow-sm rounded-3 mb-4">
             <div class="card-body p-0">
-                <div class="p-3 border-bottom d-flex justify-content-between align-items-center">
-                    <h6 class="fw-bold mb-0"><i class="bi bi-box me-2"></i>Sản phẩm</h6>
-                    <span class="badge bg-light text-dark">@Model.Items.Count món</span>
+                <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0"><i class="bi bi-box text-danger me-2"></i>Sản phẩm đã mua</h6>
+                    <span class="badge bg-light text-dark rounded-pill px-3 py-2">@Model.Items.Count món</span>
                 </div>
 
                 @foreach (var i in Model.Items)
                 {
                     <div class="p-3 border-bottom">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="bg-light rounded flex-shrink-0 d-flex align-items-center justify-content-center" style="width:56px;height:56px;">
+                            <div class="bg-light rounded flex-shrink-0 d-flex align-items-center justify-content-center overflow-hidden" style="width:60px;height:60px;">
                                 @if (!string.IsNullOrWhiteSpace(i.Product?.ImagePath))
                                 {
-                                    <img src="@i.Product.ImagePath" alt="" style="width:52px;height:52px;object-fit:cover;border-radius:6px;" />
+                                    <img src="@i.Product.ImagePath" alt="" style="width:60px;height:60px;object-fit:cover;" />
                                 }
                                 else
                                 {
                                     <i class="bi bi-box text-muted fs-4"></i>
                                 }
                             </div>
-                            <div class="flex-grow-1">
+                            <div class="flex-grow-1 minw-0">
                                 <a asp-action="Product" asp-route-id="@i.ProductId" class="fw-semibold text-dark text-decoration-none">@(i.Product?.Name ?? $"#{i.ProductId}")</a>
-                                <div class="text-muted small">SKU: @(i.Product?.Sku ?? "-")</div>
+                                <div class="text-muted small">
+                                    <span>Số lượng: @i.Quantity</span>
+                                    <span class="mx-1">·</span>
+                                    <span>@string.Format("{0:N0}", i.UnitPrice) đ / sản phẩm</span>
+                                </div>
                             </div>
                             <div class="text-end flex-shrink-0">
-                                <div class="fw-bold text-danger">@string.Format("{0:N0}", i.LineTotal) đ</div>
-                                <div class="text-muted small">@string.Format("{0:N0}", i.UnitPrice) đ x @i.Quantity</div>
+                                <div class="fw-bold text-danger fs-5">@string.Format("{0:N0}", i.LineTotal) đ</div>
                             </div>
                         </div>
                     </div>
                 }
+            </div>
+        </div>
 
-                <!-- Tổng cộng -->
-                <div class="p-3 bg-light">
-                    <div class="d-flex justify-content-between small mb-1">
+        <!-- Chi tiết thanh toán -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-credit-card text-danger me-2"></i>Chi tiết thanh toán</h6>
+                <div class="d-flex flex-column gap-2">
+                    <div class="d-flex justify-content-between small">
+                        <span class="text-muted">Phương thức thanh toán</span>
+                        <span class="fw-semibold">@SalesInvoice.DisplayPaymentMethod(Model.PaymentMethod)</span>
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <span class="text-muted">Trạng thái thanh toán</span>
+                        <span class="badge bg-@pc rounded-pill">@SalesInvoice.DisplayPaymentStatus(Model.PaymentStatus)</span>
+                    </div>
+                    <hr class="my-1" />
+                    <div class="d-flex justify-content-between small">
                         <span class="text-muted">Tạm tính</span>
                         <span>@string.Format("{0:N0}", subtotal) đ</span>
                     </div>
-                    <div class="d-flex justify-content-between small mb-1">
-                        <span class="text-muted">Vận chuyển</span>
+                    <div class="d-flex justify-content-between small">
+                        <span class="text-muted">Phí vận chuyển</span>
                         <span>@string.Format("{0:N0}", Model.ShippingFee) đ</span>
                     </div>
                     @if (Model.Discount > 0)
                     {
-                        <div class="d-flex justify-content-between small mb-1">
+                        <div class="d-flex justify-content-between small">
                             <span class="text-muted">Giảm giá</span>
                             <span class="text-success">-@string.Format("{0:N0}", Model.Discount) đ</span>
                         </div>
                     }
-                    <hr class="my-2" />
+                    <hr class="my-1" />
                     <div class="d-flex justify-content-between fw-bold fs-5">
                         <span>Tổng cộng</span>
                         <span class="text-danger">@string.Format("{0:N0}", Model.Total) đ</span>
@@ -148,28 +233,9 @@
                 </div>
             </div>
         </div>
-
-        @if (Model.Status is "Completed" or "Cancelled")
-        {
-            <div class="mt-2">
-                <button class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="reorder(@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items.Select(i => i.ProductId).ToList())))">
-                    <i class="bi bi-arrow-repeat me-1"></i>Mua lại
-                </button>
-            </div>
-        }
     </div>
 </div>
 
-@section Scripts {
-<script>
-function reorder(ids) {
-    Promise.all(ids.map(pid =>
-        fetch('@Url.Action("Add", "Cart")', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'productId=' + pid + '&qty=1'
-        })
-    )).then(() => window.location.href = '@Url.Action("Index", "Cart")');
-}
-</script>
-}
+<style>
+    .minw-0 { min-width: 0; }
+</style>

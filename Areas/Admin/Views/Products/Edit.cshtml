@@ -12,11 +12,10 @@
 
 <div class="form-card">
     <div class="card-header"><h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Thông tin sản phẩm</h5></div>
-    <div class="card-body">
-        <form method="post" enctype="multipart/form-data" asp-action="Edit">
-            <input type="hidden" asp-for="Id" />
-            <input type="hidden" asp-for="ImagePath" />
-
+    <form method="post" enctype="multipart/form-data" asp-action="Edit">
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="ImagePath" />
+        <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-6">
                     <label class="form-label">Ảnh sản phẩm</label>
@@ -30,13 +29,17 @@
                         </div>
                     }
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">SKU</label>
                     <input class="form-control" asp-for="Sku" />
                     <span class="text-danger" asp-validation-for="Sku"></span>
                 </div>
-                <div class="col-md-8">
-                    <label class="form-label">Tên</label>
+                <div class="col-md-3">
+                    <label class="form-label">Thương hiệu</label>
+                    <input class="form-control" asp-for="Brand" placeholder="VD: Samsung, Apple..." />
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Tên sản phẩm</label>
                     <input class="form-control" asp-for="Name" />
                     <span class="text-danger" asp-validation-for="Name"></span>
                 </div>
@@ -53,21 +56,35 @@
                     <span class="text-danger" asp-validation-for="Price"></span>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Tồn</label>
+                    <label class="form-label">Tồn kho</label>
                     <input class="form-control" asp-for="Stock" />
                     <span class="text-danger" asp-validation-for="Stock"></span>
                 </div>
-                <div class="col-md-3 form-check ms-2 mt-4">
-                    <input class="form-check-input" asp-for="IsActive" />
-                    <label class="form-check-label" asp-for="IsActive">Active</label>
+                <div class="col-md-3">
+                    <label class="form-label">Bảo hành (tháng)</label>
+                    <input class="form-control" asp-for="WarrantyMonths" min="0" />
+                </div>
+                <div class="col-md-3 d-flex align-items-end pb-2">
+                    <div class="form-check">
+                        <input class="form-check-input" asp-for="IsActive" />
+                        <label class="form-check-label fw-semibold" asp-for="IsActive">Đang bán</label>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Mô tả</label>
+                    <textarea class="form-control" asp-for="Description" rows="3" placeholder="Mô tả sản phẩm..."></textarea>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Thông số kỹ thuật (JSON)</label>
+                    <textarea class="form-control" asp-for="Specifications" rows="3" placeholder='VD: {"Màn hình":"6.7 inch","RAM":"8GB","ROM":"256GB"}'></textarea>
                 </div>
             </div>
-            <div class="card-footer mt-3 px-0 d-flex gap-2">
-                <button class="btn btn-dark"><i class="bi bi-check-lg me-1"></i>Lưu</button>
-                <a class="btn btn-outline-secondary" asp-action="Index"><i class="bi bi-x-lg me-1"></i>Hủy</a>
-            </div>
-        </form>
-    </div>
+        </div>
+        <div class="card-footer">
+            <a class="btn btn-outline-secondary" asp-action="Index"><i class="bi bi-x-lg me-1"></i>Hủy</a>
+            <button class="btn btn-dark"><i class="bi bi-check-lg me-1"></i>Lưu</button>
+        </div>
+    </form>
 </div>
 
 @section Scripts {
