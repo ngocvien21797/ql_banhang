@@ -61,20 +61,24 @@ public class PromotionsController : Controller
     {
         if (!ModelState.IsValid) { ViewBag.Products = _db.Products.Where(p => p.IsActive).OrderBy(p => p.Name).ToList(); return View(promotion); }
 
+        if (productIds == null || productIds.Count == 0)
+        {
+            ModelState.AddModelError("", "Vui lòng chọn ít nhất một sản phẩm áp dụng.");
+            ViewBag.Products = _db.Products.Where(p => p.IsActive).OrderBy(p => p.Name).ToList();
+            return View(promotion);
+        }
+
         promotion.CreatedAt = DateTime.Now;
         if (string.IsNullOrWhiteSpace(promotion.Code))
             promotion.Code = $"KM{DateTime.Now:yyyyMMddHHmmss}";
         _db.Promotions.Add(promotion);
         await _db.SaveChangesAsync();
 
-        if (productIds != null)
+        foreach (var pid in productIds)
         {
-            foreach (var pid in productIds)
-            {
-                _db.PromotionProducts.Add(new PromotionProduct { PromotionId = promotion.Id, ProductId = pid });
-            }
-            await _db.SaveChangesAsync();
+            _db.PromotionProducts.Add(new PromotionProduct { PromotionId = promotion.Id, ProductId = pid });
         }
+        await _db.SaveChangesAsync();
 
         TempData["Success"] = "Tạo khuyến mãi thành công!";
         return RedirectToAction(nameof(Index));
@@ -95,6 +99,13 @@ public class PromotionsController : Controller
         if (id != promotion.Id) return BadRequest();
         if (!ModelState.IsValid) { ViewBag.Products = _db.Products.Where(p => p.IsActive).OrderBy(p => p.Name).ToList(); return View(promotion); }
 
+        if (productIds == null || productIds.Count == 0)
+        {
+            ModelState.AddModelError("", "Vui lòng chọn ít nhất một sản phẩm áp dụng.");
+            ViewBag.Products = _db.Products.Where(p => p.IsActive).OrderBy(p => p.Name).ToList();
+            return View(promotion);
+        }
+
         var existing = await _db.Promotions.Include(x => x.PromotionProducts).FirstOrDefaultAsync(x => x.Id == id);
         if (existing == null) return NotFound();
 
@@ -110,13 +121,12 @@ public class PromotionsController : Controller
         existing.StartDate = promotion.StartDate;
         existing.EndDate = promotion.EndDate;
         existing.IsActive = promotion.IsActive;
+        existing.MaxUsageCount = promotion.MaxUsageCount;
+        existing.MaxUsagePerCustomer = promotion.MaxUsagePerCustomer;
 
         _db.PromotionProducts.RemoveRange(existing.PromotionProducts);
-        if (productIds != null)
-        {
-            foreach (var pid in productIds)
-                _db.PromotionProducts.Add(new PromotionProduct { PromotionId = id, ProductId = pid });
-        }
+        foreach (var pid in productIds)
+            _db.PromotionProducts.Add(new PromotionProduct { PromotionId = id, ProductId = pid });
 
         await _db.SaveChangesAsync();
         TempData["Success"] = "Cập nhật khuyến mãi thành công!";
@@ -135,6 +145,8 @@ public class PromotionsController : Controller
     {
         var p = await _db.Promotions.FindAsync(id);
         if (p == null) return NotFound();
+        var usages = await _db.PromotionUsages.Where(u => u.PromotionId == id).ToListAsync();
+        _db.PromotionUsages.RemoveRange(usages);
         _db.Promotions.Remove(p);
         await _db.SaveChangesAsync();
         TempData["Success"] = "Đã xóa khuyến mãi.";

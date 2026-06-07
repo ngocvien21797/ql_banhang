@@ -2,6 +2,10 @@
 
 @{ ViewData["Title"] = "Sửa khách hàng"; }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/admin-customers.css" asp-append-version="true" />
+}
+
 <div class="page-header">
     <div>
         <h3><i class="bi bi-pencil-square"></i> @ViewData["Title"]</h3>
@@ -9,13 +13,13 @@
     </div>
 </div>
 
-<div class="form-card">
-    <div class="card-header">
-        <h5>Thông tin khách hàng</h5>
-    </div>
-    <form method="post">
-        <input asp-for="Id" type="hidden" />
-        <div class="card-body">
+<form method="post" class="customer-form" enctype="multipart/form-data">
+    <input asp-for="Id" type="hidden" />
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-person-badge text-danger"></i> Thông tin cơ bản
+        </div>
+        <div class="form-section-body">
             <div class="row g-3">
                 <div class="col-md-6">
                     <label asp-for="Name" class="form-label"></label>
@@ -27,6 +31,26 @@
                     <input asp-for="Phone" class="form-control" placeholder="Nhập số điện thoại..." />
                     <span asp-validation-for="Phone" class="text-danger small"></span>
                 </div>
+                <div class="col-md-6">
+                    <label asp-for="Email" class="form-label"></label>
+                    <input asp-for="Email" class="form-control" placeholder="Nhập email..." />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="DateOfBirth" class="form-label"></label>
+                    <input asp-for="DateOfBirth" class="form-control" type="date" />
+                    <span asp-validation-for="DateOfBirth" class="text-danger small"></span>
+                </div>
+                <div class="col-md-3">
+                    <label asp-for="Gender" class="form-label"></label>
+                    <select asp-for="Gender" class="form-select">
+                        <option value="">-- Chọn --</option>
+                        <option value="Nam">Nam</option>
+                        <option value="Nữ">Nữ</option>
+                        <option value="Khác">Khác</option>
+                    </select>
+                    <span asp-validation-for="Gender" class="text-danger small"></span>
+                </div>
                 <div class="col-12">
                     <label asp-for="Address" class="form-label"></label>
                     <input asp-for="Address" class="form-control" placeholder="Nhập địa chỉ..." />
@@ -34,11 +58,41 @@
                 </div>
             </div>
         </div>
-        <div class="card-footer">
-            <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i> Hủy</a>
-            <button type="submit" class="btn btn-dark"><i class="bi bi-check-lg me-1"></i> Lưu</button>
+    </div>
+
+    <div class="form-section mt-3">
+        <div class="form-section-title">
+            <i class="bi bi-camera text-danger"></i> Ảnh đại diện
         </div>
-    </form>
-</div>
+        <div class="form-section-body">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label class="form-label">Chọn ảnh</label>
+                    <input class="form-control" type="file" name="avatarFile" accept="image/*" />
+                    <div class="form-text small text-muted">Chấp nhận JPG, JPEG, PNG, WEBP (tối đa 5MB).</div>
+                </div>
+                <div class="col-md-6">
+                    @if (!string.IsNullOrWhiteSpace(Model.AvatarPath))
+                    {
+                        <div>
+                            <label class="form-label">Ảnh hiện tại</label>
+                            <div>
+                                <img src="@Model.AvatarPath" alt="Avatar" class="avatar-preview" />
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-muted small">Chưa có ảnh đại diện.</div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="form-section-footer">
+            <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i> Hủy</a>
+            <button type="submit" class="btn btn-dark"><i class="bi bi-check-lg me-1"></i> Lưu thay đổi</button>
+        </div>
+    </div>
+</form>
 
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }

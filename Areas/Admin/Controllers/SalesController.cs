@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using QuanLyBanHang.Data;
 using QuanLyBanHang.Models;
@@ -153,15 +154,136 @@ public class SalesController : Controller
             {
                 product.Stock += item.Quantity;
             }
+
+            _db.StockLedgers.Add(new StockLedger
+            {
+                ProductId = item.ProductId,
+                Type = "IN",
+                Quantity = item.Quantity,
+                RefType = "SALE_CANCEL",
+                RefId = inv.Id,
+                OccurredAt = DateTime.Now
+            });
         }
 
-        _db.StockLedgers.RemoveRange(_db.StockLedgers.Where(x => x.RefType == "SALE" && x.RefId == id));
         _db.SalesInvoices.Remove(inv);
 
         await _db.SaveChangesAsync();
         await tx.CommitAsync();
 
         return RedirectToAction(nameof(Index));
+    }
+
+    public async Task<IActionResult> Create()
+    {
+        ViewBag.Customers = new SelectList(await _db.Customers.OrderBy(x => x.Name).ToListAsync(), "Id", "Name");
+        ViewBag.Products = new SelectList(await _db.Products.Where(x => x.IsActive).OrderBy(x => x.Name).ToListAsync(), "Id", "Name");
+        return View();
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> Create(
+        long? customerId, string receiverName, string? shippingPhone, string? shippingAddress,
+        string paymentMethod, string? note,
+        List<long> productIds, List<int> qtys, List<decimal> unitPrices)
+    {
+        if (productIds.Count == 0 || productIds.Count != qtys.Count || productIds.Count != unitPrices.Count)
+        {
+            TempData["Error"] = "Dữ liệu sản phẩm không hợp lệ.";
+            return RedirectToAction(nameof(Create));
+        }
+
+        using var tx = await _db.Database.BeginTransactionAsync();
+
+        var inv = new SalesInvoice
+        {
+            CustomerId = customerId,
+            ReceiverName = receiverName ?? "",
+            ShippingPhone = shippingPhone,
+            ShippingAddress = shippingAddress,
+            PaymentMethod = paymentMethod,
+            Note = note,
+            Status = "Pending",
+            PaymentStatus = "Unpaid",
+            CreatedAt = DateTime.Now
+        };
+
+        var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (long.TryParse(userIdStr, out var uid)) inv.CreatedBy = uid;
+
+        _db.SalesInvoices.Add(inv);
+        await _db.SaveChangesAsync();
+
+        inv.Code = $"DH{inv.Id:000000}";
+
+        decimal total = 0;
+
+        for (int i = 0; i < productIds.Count; i++)
+        {
+            var pid = productIds[i];
+            var q = qtys[i];
+            var price = unitPrices[i];
+
+            if (q <= 0)
+            {
+                await tx.RollbackAsync();
+                TempData["Error"] = "Số lượng phải > 0.";
+                return RedirectToAction(nameof(Create));
+            }
+            if (price < 0)
+            {
+                await tx.RollbackAsync();
+                TempData["Error"] = "Đơn giá phải >= 0.";
+                return RedirectToAction(nameof(Create));
+            }
+
+            var product = await _db.Products.FirstOrDefaultAsync(p => p.Id == pid);
+            if (product == null)
+            {
+                await tx.RollbackAsync();
+                TempData["Error"] = $"Không tìm thấy sản phẩm ID={pid}.";
+                return RedirectToAction(nameof(Create));
+            }
+
+            if (product.Stock < q)
+            {
+                await tx.RollbackAsync();
+                TempData["Error"] = $"Sản phẩm \"{product.Name}\" không đủ hàng (còn {product.Stock}).";
+                return RedirectToAction(nameof(Create));
+            }
+
+            product.Stock -= q;
+
+            var lineTotal = price * q;
+            total += lineTotal;
+
+            _db.SalesItems.Add(new SalesItem
+            {
+                SalesInvoiceId = inv.Id,
+                ProductId = pid,
+                Quantity = q,
+                UnitPrice = price,
+                LineTotal = lineTotal
+            });
+
+            _db.StockLedgers.Add(new StockLedger
+            {
+                ProductId = pid,
+                Type = "OUT",
+                Quantity = q,
+                RefType = "SALE",
+                RefId = inv.Id,
+                OccurredAt = DateTime.Now
+            });
+        }
+
+        inv.Total = total;
+
+        await _db.SaveChangesAsync();
+        await tx.CommitAsync();
+
+        TempData["Ok"] = $"Đã tạo đơn hàng {inv.Code} thành công.";
+        return RedirectToAction(nameof(Details), new { id = inv.Id });
     }
 
     private long GetUserId()

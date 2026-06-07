@@ -2,6 +2,10 @@
 
 @{ ViewData["Title"] = "Thêm danh mục"; }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/admin-categories.css" asp-append-version="true" />
+}
+
 <div class="page-header">
     <div>
         <h3><i class="bi bi-plus-circle"></i> @ViewData["Title"]</h3>
@@ -9,25 +13,25 @@
     </div>
 </div>
 
-<div class="form-card">
-    <div class="card-header">
-        <h5>Thông tin danh mục</h5>
-    </div>
-    <form method="post">
-        <div class="card-body">
+<form method="post" class="cat-form">
+    <div class="form-section">
+        <div class="form-section-title">
+            <i class="bi bi-tag-fill text-primary"></i> Thông tin danh mục
+        </div>
+        <div class="form-section-body">
             <div class="row g-3">
                 <div class="col-md-6">
                     <label asp-for="Name" class="form-label"></label>
-                    <input asp-for="Name" class="form-control" placeholder="Nhập tên..." />
+                    <input asp-for="Name" class="form-control" placeholder="Nhập tên danh mục..." />
                     <span asp-validation-for="Name" class="text-danger small"></span>
                 </div>
             </div>
         </div>
-        <div class="card-footer">
+        <div class="form-section-footer">
             <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i> Hủy</a>
             <button type="submit" class="btn btn-dark"><i class="bi bi-check-lg me-1"></i> Lưu</button>
         </div>
-    </form>
-</div>
+    </div>
+</form>
 
 @section Scripts { <partial name="_ValidationScriptsPartial" /> }

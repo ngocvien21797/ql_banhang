@@ -41,18 +41,6 @@ public static class SeedData
             db.SaveChanges();
         }
 
-        // ==================== SUPPLIERS ====================
-        if (!db.Suppliers.Any())
-        {
-            db.Suppliers.AddRange(
-                new Supplier { Name = "Công ty TNHH Điện tử Sài Gòn", Phone = "0281111111", Address = "TP.HCM" },
-                new Supplier { Name = "Công ty CP Thương mại Quốc tế", Phone = "0282222222", Address = "Hà Nội" },
-                new Supplier { Name = "Tập đoàn Công nghệ Việt", Phone = "0283333333", Address = "Đà Nẵng" },
-                new Supplier { Name = "Công ty TNHH Phụ kiện Xanh", Phone = "0284444444", Address = "Bình Dương" }
-            );
-            db.SaveChanges();
-        }
-
         // ==================== PRODUCTS ====================
         if (!db.Products.Any())
         {
@@ -102,64 +90,6 @@ public static class SeedData
                 new Product { Sku = "BP004", Name = "Chuột không dây Logitech MX Master 3S", CategoryId = banphim.Id, Price = 1990000, Stock = 25, IsActive = true, ImagePath = "/uploads/products/bp004.jpg", Description = bpDesc, Brand = "Logitech", WarrantyMonths = 24, Specifications = "[{\"label\":\"Kết nối\",\"value\":\"Bluetooth / USB-C\"},{\"label\":\"DPI\",\"value\":\"8,000\"},{\"label\":\"Pin\",\"value\":\"70 ngày\"},{\"label\":\"Ergonomics\",\"value\":\"Công thái học\"}]" },
                 new Product { Sku = "BP005", Name = "Mousepad Razer Gigantus V2 L", CategoryId = banphim.Id, Price = 399000, Stock = 60, IsActive = true, ImagePath = "/uploads/products/bp005.jpg", Description = bpDesc, Brand = "Razer", WarrantyMonths = 12, Specifications = "[{\"label\":\"Kích thước\",\"value\":\"455x455mm\"},{\"label\":\"Độ dày\",\"value\":\"3mm\"},{\"label\":\"Chất liệu\",\"value\":\"Vải micro-weave\"},{\"label\":\"Đế\",\"value\":\"Chống trượt\"}]" }
             );
-            db.SaveChanges();
-        }
-
-        // ==================== PURCHASE INVOICES + ITEMS + STOCK LEDGER ====================
-        if (!db.PurchaseInvoices.Any())
-        {
-            var supplier1 = db.Suppliers.First();
-            var supplier2 = db.Suppliers.Skip(1).First();
-            var products = db.Products.ToList();
-
-            var invoices = new List<PurchaseInvoice>();
-            var rng = new Random(42);
-            var now = DateTime.Now;
-
-            // Tạo 5 phiếu nhập trong 30 ngày qua
-            for (int i = 0; i < 5; i++)
-            {
-                var inv = new PurchaseInvoice
-                {
-                    SupplierId = i % 2 == 0 ? supplier1.Id : supplier2.Id,
-                    CreatedAt = now.AddDays(-rng.Next(1, 30)).AddHours(rng.Next(8, 17)),
-                    Total = 0
-                };
-                db.PurchaseInvoices.Add(inv);
-                db.SaveChanges();
-
-                // Thêm 3-6 sản phẩm mỗi phiếu
-                int itemCount = rng.Next(3, 7);
-                decimal total = 0;
-                for (int j = 0; j < itemCount; j++)
-                {
-                    var prod = products[rng.Next(products.Count)];
-                    int qty = rng.Next(5, 30);
-                    decimal cost = prod.Price * (decimal)(0.6 + rng.NextDouble() * 0.3);
-                    var lineTotal = cost * qty;
-                    total += lineTotal;
-
-                    db.PurchaseItems.Add(new PurchaseItem
-                    {
-                        PurchaseInvoiceId = inv.Id,
-                        ProductId = prod.Id,
-                        Quantity = qty,
-                        UnitCost = cost,
-                        LineTotal = lineTotal
-                    });
-
-                    db.StockLedgers.Add(new StockLedger
-                    {
-                        ProductId = prod.Id,
-                        Type = "IN",
-                        Quantity = qty,
-                        OccurredAt = inv.CreatedAt,
-                        RefType = "Purchase",
-                        RefId = inv.Id
-                    });
-                }
-                inv.Total = total;
-            }
             db.SaveChanges();
         }
 
@@ -362,6 +292,135 @@ public static class SeedData
                     });
                 }
             }
+            db.SaveChanges();
+        }
+
+        // ==================== BANNERS ====================
+        if (!db.Banners.Any())
+        {
+            db.Banners.AddRange(
+                new Banner
+                {
+                    Title = "iPhone 15 Pro Max — Chính hãng giá tốt",
+                    ImagePath = "https://picsum.photos/seed/banner1/1200/400",
+                    SortOrder = 1,
+                    IsActive = true,
+                    CreatedAt = DateTime.Now
+                },
+                new Banner
+                {
+                    Title = "MacBook Air M3 — Siêu nhẹ, siêu mạnh",
+                    ImagePath = "https://picsum.photos/seed/banner2/1200/400",
+                    SortOrder = 2,
+                    IsActive = true,
+                    CreatedAt = DateTime.Now
+                },
+                new Banner
+                {
+                    Title = "Giảm đến 30% phụ kiện công nghệ",
+                    ImagePath = "https://picsum.photos/seed/banner3/1200/400",
+                    SortOrder = 3,
+                    IsActive = true,
+                    CreatedAt = DateTime.Now
+                }
+            );
+            db.SaveChanges();
+        }
+
+        // ==================== ARTICLES ====================
+        if (!db.Articles.Any())
+        {
+            db.Articles.AddRange(
+                new Article
+                {
+                    Title = "Top 5 điện thoại đáng mua nhất 2026",
+                    Slug = "top-5-dien-thoai-dang-mua-nhat-2026",
+                    Summary = "Bạn đang phân vân chọn điện thoại mới? Bài viết tổng hợp top 5 smartphone đáng mua nhất năm 2026 với đầy đủ phân khúc từ bình dân đến cao cấp.",
+                    Content = "Thị trường smartphone năm 2026 chứng kiến nhiều đột phá về công nghệ.\n\n" +
+                              "1. iPhone 17 Pro Max — Flagship mới nhất từ Apple với chip A19 Pro, camera 48MP và pin siêu trâu.\n\n" +
+                              "2. Samsung Galaxy S26 Ultra — Màn hình Dynamic AMOLED 120Hz, camera 200MP, bút S-Pen tích hợp.\n\n" +
+                              "3. Xiaomi 16 Pro — Giá tốt nhất phân khúc cao cấp với chip Snapdragon 9 Gen 4.\n\n" +
+                              "4. OPPO Find N6 Fold — Điện thoại gập mỏng nhẹ, màn hình không nếp gấp.\n\n" +
+                              "5. Google Pixel 11 — Camera tính toán xuất sắc, Android thuần khiết.\n\n" +
+                              "Kết luận: Tuỳ vào nhu cầu và ngân sách, bạn có thể chọn cho mình một chiếc máy phù hợp. Ghé MiniMart để trải nghiệm thực tế trước khi quyết định nhé!",
+                    ImagePath = "https://picsum.photos/seed/article1/800/400",
+                    IsActive = true,
+                    CreatedAt = DateTime.Now.AddDays(-3),
+                    CreatedBy = "admin"
+                },
+                new Article
+                {
+                    Title = "Hướng dẫn chọn laptop sinh viên 2026",
+                    Slug = "huong-dan-chon-laptop-sinh-vien-2026",
+                    Summary = "Những tiêu chí quan trọng khi chọn laptop cho sinh viên: cấu hình, thời lượng pin, trọng lượng và giá cả.",
+                    Content = "Chọn laptop cho sinh viên cần cân nhắc nhiều yếu tố:\n\n" +
+                              "1. Mục đích sử dụng — Học tập văn phòng hay đồ hoạ, lập trình?\n\n" +
+                              "2. Thời lượng pin — Tối thiểu 8 tiếng cho một buổi học.\n\n" +
+                              "3. Trọng lượng — Dưới 1.5kg cho việc di chuyển hàng ngày.\n\n" +
+                              "4. Giá cả — Phân khúc 15-30 triệu là lý tưởng cho sinh viên.\n\n" +
+                              "Gợi ý: MacBook Air M3, Dell XPS 15, Lenovo ThinkPad X1 Carbon là những lựa chọn hàng đầu.",
+                    ImagePath = "https://picsum.photos/seed/article2/800/400",
+                    IsActive = true,
+                    CreatedAt = DateTime.Now.AddDays(-7),
+                    CreatedBy = "admin"
+                },
+                new Article
+                {
+                    Title = "Công nghệ sạc nhanh GaN — Tại sao nên nâng cấp?",
+                    Slug = "cong-nghe-sac-nhanh-gan",
+                    Summary = "Sạc GaN nhỏ gọn hơn, mát hơn và sạc nhanh hơn sạc thường. Tìm hiểu lý do bạn nên chuyển sang sạc GaN ngay hôm nay.",
+                    Content = "Công nghệ GaN (Gallium Nitride) đang thay đổi ngành sạc:\n\n" +
+                              "1. Kích thước nhỏ hơn 50% so với sạc Silicon truyền thống.\n\n" +
+                              "2. Tản nhiệt tốt hơn, sạc lâu không bị nóng.\n\n" +
+                              "3. Hiệu suất chuyển đổi cao, tiết kiệm điện.\n\n" +
+                              "4. Hỗ trợ đa giao thức: PD 3.0, QC 4+, PPS.\n\n" +
+                              "MiniMart hiện có sẵn sạc GaN 65W và 100W với giá tốt nhất thị trường.",
+                    ImagePath = "https://picsum.photos/seed/article3/800/400",
+                    IsActive = true,
+                    CreatedAt = DateTime.Now.AddDays(-14),
+                    CreatedBy = "admin"
+                },
+                new Article
+                {
+                    Title = "So sánh AirPods Pro 2 vs Sony WF-1000XM6",
+                    Slug = "so-sanh-airpods-pro-2-vs-sony-wf-1000xm6",
+                    Summary = "Cuộc chiến tai nghe true wireless cao cấp: bên nào xứng đáng với số tiền bạn bỏ ra?",
+                    Content = "Hai ông lớn trong làng tai nghe true wireless:\n\n" +
+                              "--- AirPods Pro 2 ---\n" +
+                              "• Chip H2, chống ồn ANC cải thiện 2x\n" +
+                              "• Âm thanh thích ứng, spatial audio\n" +
+                              "• Thời lượng pin: 6h (30h với hộp)\n" +
+                              "• Tích hợp sâu với hệ sinh thái Apple\n" +
+                              "• Giá: 5.490.000₫\n\n" +
+                              "--- Sony WF-1000XM6 ---\n" +
+                              "• Driver dynamic mới, âm bass mạnh\n" +
+                              "• Chống ồn ANC tốt nhất thị trường\n" +
+                              "• Thời lượng pin: 8h (32h với hộp)\n" +
+                              "• Ứng dụng Sony Headphones Connect\n" +
+                              "• Giá: 7.990.000₫\n\n" +
+                              "Kết luận: Nếu bạn dùng iPhone — AirPods Pro 2 là lựa chọn tối ưu. Nếu bạn muốn chất âm tốt nhất — hãy chọn Sony.",
+                    ImagePath = "https://picsum.photos/seed/article4/800/400",
+                    IsActive = true,
+                    CreatedAt = DateTime.Now.AddDays(-21),
+                    CreatedBy = "admin"
+                },
+                new Article
+                {
+                    Title = "Bí quyết bảo quản pin laptop bền lâu",
+                    Slug = "bi-quyet-bao-quan-pin-laptop",
+                    Summary = "Pin laptop xuống cấp sau vài tháng? Áp dụng ngay những mẹo nhỏ này để kéo dài tuổi thọ pin.",
+                    Content = "Tuổi thọ pin lithium-ion phụ thuộc nhiều vào thói quen sạc:\n\n" +
+                              "1. Không sạc qua đêm — Dừng ở 80-90% là lý tưởng.\n\n" +
+                              "2. Không để pin cạn kiệt hoàn toàn — Sạc khi còn 20%.\n\n" +
+                              "3. Tránh nhiệt độ cao — Không dùng laptop trên chăn/gối khi đang sạc.\n\n" +
+                              "4. Vệ sinh cổng sạc định kỳ.\n\n" +
+                              "5. Nếu không dùng lâu, giữ pin ở mức 50% và tắt máy hoàn toàn.",
+                    ImagePath = "https://picsum.photos/seed/article5/800/400",
+                    IsActive = true,
+                    CreatedAt = DateTime.Now.AddDays(-30),
+                    CreatedBy = "admin"
+                }
+            );
             db.SaveChanges();
         }
 

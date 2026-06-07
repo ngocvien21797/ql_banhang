@@ -78,21 +78,28 @@
                             <td>@p.Name</td>
                             <td>@(p.Category?.Name ?? "-")</td>
                             <td class="text-end">@string.Format("{0:N0}", p.Price)</td>
-                            <td class="text-end">@p.Stock</td>
+                            <td class="text-end">
+                                <span class="stock-badge" data-id="@p.Id" data-name="@p.Name" data-stock="@p.Stock"
+                                      style="cursor:pointer;font-weight:700;color:var(--primary);"
+                                      onclick="openStockModal(this)">
+                                    @p.Stock
+                                </span>
+                            </td>
                             <td class="text-center">
-                                @if (p.IsActive)
-                                {
-                                    <span class="status-badge success">Đang bán</span>
-                                }
-                                else
-                                {
-                                    <span class="status-badge secondary">Ngừng bán</span>
-                                }
+                                <select class="form-select form-select-sm status-select" data-id="@p.Id"
+                                        style="width:130px;margin:0 auto;color:#000;@(p.IsActive ? "background:#d4edda" : "background:#f8d7da")">
+                                    <option value="true" style="background:#d4edda;color:#000;" selected="@p.IsActive">Đang bán</option>
+                                    <option value="false" style="background:#f8d7da;color:#000;" selected="@(!p.IsActive)">Ngừng bán</option>
+                                </select>
                             </td>
                             <td class="text-end">
                                 <a class="btn btn-sm btn-outline-secondary" asp-action="Details" asp-route-id="@p.Id"><i class="bi bi-eye me-1"></i>Xem</a>
                                 @if (isAdmin)
                                 {
+                                    <button class="btn btn-sm btn-outline-dark" onclick="openStockModal(this)" title="Điều chỉnh tồn"
+                                            data-id="@p.Id" data-name="@p.Name" data-stock="@p.Stock">
+                                        <i class="bi bi-boxes"></i>
+                                    </button>
                                     <a class="btn btn-sm btn-outline-dark" asp-action="Edit" asp-route-id="@p.Id"><i class="bi bi-pencil me-1"></i>Sửa</a>
                                     <a class="btn btn-sm btn-outline-danger" asp-action="Delete" asp-route-id="@p.Id"><i class="bi bi-trash me-1"></i>Xóa</a>
                                 }
@@ -100,10 +107,85 @@
                         </tr>
                     }
                 </tbody>
-            </table>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer">
+                <partial name="_Pagination" model="ViewBag.Pagination" />
+            </div>
         </div>
-    </div>
-    <div class="card-footer">
-        <partial name="_Pagination" model="ViewBag.Pagination" />
-    </div>
-</div>
+
+        <!-- Stock Adjust Modal -->
+        <div class="modal fade" id="stockModal" tabindex="-1">
+            <div class="modal-dialog modal-sm modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h6 class="modal-title fw-bold"><i class="bi bi-boxes me-2"></i>Điều chỉnh tồn kho</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-2"><span class="text-muted small">Sản phẩm:</span> <strong id="stockProductName"></strong></div>
+                        <div class="mb-3"><span class="text-muted small">Tồn hiện tại:</span> <strong id="stockCurrent"></strong></div>
+                        <label class="form-label">Tồn mới</label>
+                        <input type="number" class="form-control" id="stockNewValue" min="0" />
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                        <button class="btn btn-dark btn-sm" id="stockSaveBtn"><i class="bi bi-check-lg me-1"></i>Lưu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @section Scripts {
+            <script>
+                document.querySelectorAll('.status-select').forEach(function(sel) {
+                    sel.addEventListener('change', function() {
+                        var id = this.dataset.id;
+                        fetch('@Url.Action("ToggleStatus", "Products")', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: 'id=' + id
+                        }).then(r => r.json()).then(data => {
+                            if (data.success) {
+                                this.value = data.isActive.toString();
+                                this.style.background = data.isActive ? '#d4edda' : '#f8d7da';
+                            }
+                        });
+                    });
+                });
+
+                var stockModal = new bootstrap.Modal(document.getElementById('stockModal'));
+                var currentProductId = null;
+
+                window.openStockModal = function(el) {
+                    currentProductId = el.dataset.id;
+                    document.getElementById('stockProductName').textContent = el.dataset.name;
+                    document.getElementById('stockCurrent').textContent = el.dataset.stock;
+                    document.getElementById('stockNewValue').value = el.dataset.stock;
+                    stockModal.show();
+                };
+
+                document.getElementById('stockSaveBtn').addEventListener('click', function() {
+                    var val = parseInt(document.getElementById('stockNewValue').value);
+                    if (isNaN(val) || val < 0) { alert('Số lượng không hợp lệ'); return; }
+
+                    fetch('@Url.Action("AdjustStock", "Products")', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: 'id=' + currentProductId + '&stock=' + val
+                    }).then(r => r.json()).then(data => {
+                        if (data.success) {
+                            document.querySelectorAll('[data-id="' + currentProductId + '"]').forEach(function(el) {
+                                if (el.classList.contains('stock-badge')) {
+                                    el.textContent = data.stock;
+                                }
+                                el.dataset.stock = data.stock;
+                            });
+                            stockModal.hide();
+                            location.reload();
+                        }
+                    });
+                });
+            </script>
+        }

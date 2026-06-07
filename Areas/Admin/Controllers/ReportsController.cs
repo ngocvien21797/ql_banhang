@@ -24,7 +24,7 @@ namespace QuanLyBanHang.Areas.Admin.Controllers
             var t = to ?? DateTime.Today;
 
             var raw = await _db.SalesInvoices
-                .Where(x => x.CreatedAt.Date >= f.Date && x.CreatedAt.Date <= t.Date)
+                .Where(x => x.CreatedAt.Date >= f.Date && x.CreatedAt.Date <= t.Date && x.Status != "Cancelled")
                 .GroupBy(x => x.CreatedAt.Date)
                 .Select(g => new RevenueRow
                 {
@@ -68,7 +68,7 @@ namespace QuanLyBanHang.Areas.Admin.Controllers
             var data = await _db.SalesItems
                 .Include(i => i.Product)
                 .Include(i => i.Invoice)
-                .Where(i => i.Invoice != null && i.Invoice.CreatedAt.Date >= f.Date && i.Invoice.CreatedAt.Date <= t.Date)
+                .Where(i => i.Invoice != null && i.Invoice.Status != "Cancelled" && i.Invoice.CreatedAt.Date >= f.Date && i.Invoice.CreatedAt.Date <= t.Date)
                 .GroupBy(i => new { i.ProductId, ProductName = i.Product != null ? i.Product.Name : "" })
                 .Select(g => new TopProductRow
                 {

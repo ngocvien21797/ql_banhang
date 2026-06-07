@@ -38,6 +38,7 @@ builder.Services.AddAuthorization();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.Section));
 builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSignalR();
 
 var app = builder.Build();
 
@@ -74,12 +75,31 @@ static async Task MigrateSchemaAsync(SalesDbContext db)
     sqls.Add("CREATE TABLE IF NOT EXISTS Wishlists (Id bigint NOT NULL AUTO_INCREMENT, CustomerId bigint NOT NULL, ProductId bigint NOT NULL, CreatedAt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (Id), UNIQUE KEY IX_Wishlists_CustomerId_ProductId (CustomerId,ProductId), CONSTRAINT FK_Wishlists_Customers_CustomerId FOREIGN KEY (CustomerId) REFERENCES Customers (Id) ON DELETE CASCADE, CONSTRAINT FK_Wishlists_Products_ProductId FOREIGN KEY (ProductId) REFERENCES Products (Id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
     sqls.Add("CREATE TABLE IF NOT EXISTS Reviews (Id bigint NOT NULL AUTO_INCREMENT, ProductId bigint NOT NULL, CustomerId bigint NOT NULL, Rating int NOT NULL, Content longtext CHARACTER SET utf8mb4 NULL, CreatedAt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (Id), KEY IX_Reviews_ProductId (ProductId), CONSTRAINT FK_Reviews_Products_ProductId FOREIGN KEY (ProductId) REFERENCES Products (Id) ON DELETE CASCADE, CONSTRAINT FK_Reviews_Customers_CustomerId FOREIGN KEY (CustomerId) REFERENCES Customers (Id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
     sqls.Add("CREATE TABLE IF NOT EXISTS Notifications (Id bigint NOT NULL AUTO_INCREMENT, CustomerId bigint NOT NULL, Title varchar(200) CHARACTER SET utf8mb4 NOT NULL, Message varchar(1000) CHARACTER SET utf8mb4 NULL, IsRead tinyint(1) NOT NULL DEFAULT 0, Url varchar(500) CHARACTER SET utf8mb4 NULL, CreatedAt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (Id), KEY IX_Notifications_CustomerId (CustomerId), CONSTRAINT FK_Notifications_Customers_CustomerId FOREIGN KEY (CustomerId) REFERENCES Customers (Id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+    sqls.Add(GetAddColumnSql("Customers", "Email", "varchar(100) CHARACTER SET utf8mb4 NULL AFTER Address"));
+    sqls.Add(GetAddColumnSql("Customers", "AvatarPath", "varchar(500) CHARACTER SET utf8mb4 NULL AFTER Email"));
+    sqls.Add(GetAddColumnSql("Customers", "DateOfBirth", "datetime NULL AFTER AvatarPath"));
+    sqls.Add(GetAddColumnSql("Customers", "Gender", "varchar(10) CHARACTER SET utf8mb4 NULL AFTER DateOfBirth"));
+    sqls.Add(GetAddColumnSql("Promotions", "MaxUsageCount", "int NULL AFTER IsActive"));
+    sqls.Add(GetAddColumnSql("Promotions", "MaxUsagePerCustomer", "int NULL AFTER MaxUsageCount"));
+    sqls.Add(GetAddColumnSql("Promotions", "UsageCount", "int NOT NULL DEFAULT 0 AFTER MaxUsagePerCustomer"));
+    sqls.Add(@"CREATE TABLE IF NOT EXISTS PromotionUsages (Id bigint NOT NULL AUTO_INCREMENT, PromotionId bigint NOT NULL, CustomerId bigint NOT NULL, SalesInvoiceId bigint NULL, UsedAt datetime NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY (Id), KEY IX_PromotionUsages_PromotionId (PromotionId), CONSTRAINT FK_PromotionUsages_Promotions_PromotionId FOREIGN KEY (PromotionId) REFERENCES Promotions (Id) ON DELETE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
     foreach (var sql in sqls)
     {
         try { await db.Database.ExecuteSqlRawAsync(sql); }
         catch { }
     }
+}
+
+static string GetAddColumnSql(string table, string column, string definition)
+{
+    return $@"
+SET @db = (SELECT DATABASE());
+SET @exists = (SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = @db AND TABLE_NAME = '{table}' AND COLUMN_NAME = '{column}');
+SET @sql = IF(@exists = 0, 'ALTER TABLE {table} ADD COLUMN {column} {definition}', 'SELECT 1 AS col_exists');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;";
 }
 
 
@@ -111,5 +131,7 @@ app.MapAreaControllerRoute(
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapHub<QuanLyBanHang.Hubs.OrderHub>("/hub/orders");
 
 app.Run();

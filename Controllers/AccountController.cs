@@ -92,9 +92,9 @@ public class AccountController : Controller
     public async Task<IActionResult> Register(
         string username,
         string password,
+        string confirmPassword,
         string name,
         string? phone,
-        string? address,
         string? returnUrl = null)
     {
         if (string.IsNullOrWhiteSpace(username) ||
@@ -110,10 +110,19 @@ public class AccountController : Controller
 
         username = username.Trim();
 
+        if (password != confirmPassword)
+        {
+            ViewBag.Error = "Mật khẩu nhập lại không khớp.";
+            ViewBag.ReturnUrl = string.IsNullOrWhiteSpace(returnUrl)
+                ? Url.Action("Index", "Shop", new { area = "Customer" })
+                : returnUrl;
+            return View();
+        }
+
         var exists = await _db.Users.AnyAsync(u => u.Username == username);
         if (exists)
         {
-            ViewBag.Error = "Tên đăng nhập đã tồn tại.";
+            ViewBag.Error = "Email đã được đăng ký.";
             ViewBag.ReturnUrl = string.IsNullOrWhiteSpace(returnUrl)
                 ? Url.Action("Index", "Shop", new { area = "Customer" })
                 : returnUrl;
@@ -124,8 +133,7 @@ public class AccountController : Controller
         var customer = new Customer
         {
             Name = name.Trim(),
-            Phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim(),
-            Address = string.IsNullOrWhiteSpace(address) ? null : address.Trim()
+            Phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim()
         };
         _db.Customers.Add(customer);
         await _db.SaveChangesAsync();

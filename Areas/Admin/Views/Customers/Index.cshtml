@@ -1,9 +1,14 @@
 @model IEnumerable<QuanLyBanHang.Areas.Admin.Controllers.CustomersController.CustomerViewModel>
+@using QuanLyBanHang.Helpers
 
 @{
     ViewData["Title"] = "Khách hàng";
     var pagination = ViewBag.Pagination as QuanLyBanHang.ViewModels.PaginationModel;
     var count = Model.Count();
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/admin-customers.css" asp-append-version="true" />
 }
 
 <div class="page-header">
@@ -34,10 +39,10 @@
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table align-middle mb-0">
+            <table class="table align-middle mb-0 customer-table">
                 <thead>
                     <tr>
-                        <th>Tên</th>
+                        <th>Khách hàng</th>
                         <th>SĐT</th>
                         <th>Địa chỉ</th>
                         <th class="text-center">Số đơn</th>
@@ -49,14 +54,29 @@
                 <tbody>
                     @foreach(var item in Model) {
                         <tr>
-                            <td class="fw-semibold">@item.Name</td>
+                            <td>
+                                <div class="customer-cell">
+                                    @if (!string.IsNullOrWhiteSpace(item.AvatarPath))
+                                    {
+                                        <img src="@item.AvatarPath" alt="" class="avatar-sm" />
+                                    }
+                                    else
+                                    {
+                                        <div class="customer-avatar">@item.Name.Substring(0, 1).ToUpper()</div>
+                                    }
+                                    <div class="customer-info">
+                                        <h6>@item.Name</h6>
+                                        <small>@(!string.IsNullOrWhiteSpace(item.Email) ? item.Email : $"ID: {item.Id}")</small>
+                                    </div>
+                                </div>
+                            </td>
                             <td>@item.Phone</td>
                             <td>@item.Address</td>
                             <td class="text-center">
-                                <span class="badge @(item.OrderCount > 0 ? "bg-info" : "bg-secondary")">@item.OrderCount</span>
+                                <span class="badge order-badge @(item.OrderCount > 0 ? "bg-info" : "bg-secondary")">@item.OrderCount</span>
                             </td>
-                            <td class="text-end fw-semibold">@item.TotalSpent.ToString("N0")</td>
-                            <td class="small">@(item.LastOrderDate?.ToString("dd/MM/yyyy") ?? "-")</td>
+                            <td class="text-end"><span class="spent-amount">@string.Format("{0:N0}", item.TotalSpent) đ</span></td>
+                            <td><span class="last-date">@(item.LastOrderDate?.ToString("dd/MM/yyyy") ?? "-")</span></td>
                             <td class="text-end">
                                 <div class="btn-group">
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary" title="Xem"><i class="bi bi-eye"></i></a>

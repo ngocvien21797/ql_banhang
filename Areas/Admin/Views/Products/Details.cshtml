@@ -1,4 +1,5 @@
 @model QuanLyBanHang.Models.Product
+@using System.Text.Json
 @{
     ViewData["Title"] = "Chi tiết sản phẩm";
 
@@ -9,14 +10,21 @@
         if (p.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
             p.StartsWith("https://", StringComparison.OrdinalIgnoreCase) ||
             p.StartsWith("/"))
-        {
             imgSrc = p;
-        }
         else
-        {
             imgSrc = "/" + p;
-        }
     }
+
+    List<Dictionary<string, string>> specs = new();
+    if (!string.IsNullOrWhiteSpace(Model.Specifications))
+    {
+        try { specs = JsonSerializer.Deserialize<List<Dictionary<string, string>>>(Model.Specifications) ?? new(); }
+        catch { }
+    }
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/admin-products.css" asp-append-version="true" />
 }
 
 <div class="page-header">
@@ -30,90 +38,93 @@
     </div>
 </div>
 
-<div class="detail-card">
+<div class="form-card">
+    <div class="card-header"><h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Thông tin sản phẩm</h5></div>
     <div class="card-body">
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="fw-semibold mb-2">Ảnh sản phẩm</div>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label">Ảnh sản phẩm</label>
                 @if (!string.IsNullOrWhiteSpace(imgSrc))
                 {
-                    <div style="border:1px solid var(--border);border-radius:12px;background:#fff;padding:10px;">
-                        <img src="@imgSrc" alt="@Model.Name"
-                             style="width:100%;max-height:260px;object-fit:contain;display:block;" />
+                    <div class="detail-img-wrapper">
+                        <img src="@imgSrc" alt="@Model.Name" />
                     </div>
-                    <div class="small text-muted mt-2">
-                        <a href="@imgSrc" target="_blank">Mở ảnh tab mới</a>
+                    <div class="detail-img-link mt-1">
+                        <a href="@imgSrc" target="_blank">Mở ảnh tab mới <i class="bi bi-box-arrow-up-right"></i></a>
                     </div>
                 }
                 else
                 {
-                    <div class="text-muted">No image</div>
+                    <div class="detail-img-placeholder">
+                        <i class="bi bi-image"></i>
+                        <div>Chưa có ảnh</div>
+                    </div>
                 }
-
             </div>
-            <div class="col-md-8">
-                <table class="table table-borderless mb-0">
-                    <tbody>
-                        <tr>
-                            <td class="text-muted" style="width:140px;">SKU</td>
-                            <td class="fw-semibold">@Model.Sku</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Tên</td>
-                            <td class="fw-semibold">@Model.Name</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Danh mục</td>
-                            <td>@(Model.Category?.Name ?? "-")</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Giá</td>
-                            <td class="fw-semibold">@string.Format("{0:N0}", Model.Price) đ</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Tồn</td>
-                            <td>@Model.Stock</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Trạng thái</td>
-                            <td>
-                                @if (Model.IsActive)
-                                {
-                                    <span class="status-badge success">Đang bán</span>
-                                }
-                                else
-                                {
-                                    <span class="status-badge secondary">Ngừng bán</span>
-                                }
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Thương hiệu</td>
-                            <td class="fw-semibold">@(!string.IsNullOrWhiteSpace(Model.Brand) ? Model.Brand : "-")</td>
-                        </tr>
-                        <tr>
-                            <td class="text-muted">Bảo hành</td>
-                            <td>@(Model.WarrantyMonths > 0 ? $"{Model.WarrantyMonths} tháng" : "-")</td>
-                        </tr>
-                    </tbody>
-                </table>
-
-                @if (!string.IsNullOrWhiteSpace(Model.Description))
+            <div class="col-md-3">
+                <label class="form-label">SKU</label>
+                <div class="detail-field-value">@Model.Sku</div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Thương hiệu</label>
+                <div class="detail-field-value">@(!string.IsNullOrWhiteSpace(Model.Brand) ? Model.Brand : "-")</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Tên sản phẩm</label>
+                <div class="detail-field-value">@Model.Name</div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Danh mục</label>
+                <div class="detail-field-value">@(Model.Category?.Name ?? "-")</div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Giá</label>
+                <div class="detail-field-value">@string.Format("{0:N0}", Model.Price) đ</div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tồn kho</label>
+                <div class="detail-field-value">@Model.Stock</div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Bảo hành (tháng)</label>
+                <div class="detail-field-value">@(Model.WarrantyMonths > 0 ? $"{Model.WarrantyMonths} tháng" : "Không")</div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Trạng thái</label>
+                <div class="detail-field-value @(Model.IsActive ? "status-active" : "status-inactive")">
+                    <i class="bi @(Model.IsActive ? "bi-check-circle-fill" : "bi-x-circle-fill") me-1"></i>
+                    @(Model.IsActive ? "Đang bán" : "Ngừng bán")
+                </div>
+            </div>
+            <div class="col-12 product-desc-wrap">
+                <label class="form-label"><i class="bi bi-info-circle me-1"></i>Giới thiệu sản phẩm</label>
+                <div class="detail-field-value" style="white-space:pre-line;line-height:1.8;">@(!string.IsNullOrWhiteSpace(Model.Description) ? Model.Description : "Chưa có mô tả")</div>
+            </div>
+            <div class="col-12 product-specs-wrap">
+                <label class="form-label">Thông số kỹ thuật</label>
+                @if (specs.Count > 0)
                 {
-                    <div class="mt-4">
-                        <div class="fw-semibold mb-2">Mô tả</div>
-                        <div class="text-muted small" style="white-space:pre-line">@Model.Description</div>
-                    </div>
+                    <table class="detail-specs-table">
+                        <tbody>
+                            @foreach (var spec in specs)
+                            {
+                                <tr>
+                                    <td class="detail-specs-label">@spec.GetValueOrDefault("label", "")</td>
+                                    <td class="detail-specs-value">@spec.GetValueOrDefault("value", "")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 }
-
-                @if (!string.IsNullOrWhiteSpace(Model.Specifications))
+                else
                 {
-                    <div class="mt-3">
-                        <div class="fw-semibold mb-2">Thông số kỹ thuật</div>
-                        <div class="text-muted small" style="white-space:pre-line">@Model.Specifications</div>
-                    </div>
+                    <div class="text-muted">Chưa có thông số kỹ thuật</div>
                 }
             </div>
         </div>
+    </div>
+    <div class="card-footer">
+        <a class="btn btn-outline-secondary" asp-action="Index"><i class="bi bi-arrow-left me-1"></i>Quay lại danh sách</a>
+        <a class="btn btn-dark" asp-action="Edit" asp-route-id="@Model.Id"><i class="bi bi-pencil me-1"></i>Sửa sản phẩm</a>
     </div>
 </div>

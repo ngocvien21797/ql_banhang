@@ -18,6 +18,29 @@
         <input type="text" name="search" class="form-control form-control-sm" placeholder="Tìm theo tên, SKU..." value="@Context.Request.Query["search"]" style="width:200px">
     </div>
     <div class="form-group">
+        <label class="form-label">Danh mục</label>
+        <select name="categoryId" class="form-select form-select-sm" style="width:180px">
+            <option value="">-- Tất cả --</option>
+            @if (ViewBag.Categories is SelectList cats)
+            {
+                foreach (var c in cats)
+                {
+                    <option value="@c.Value" selected="@(Context.Request.Query["categoryId"] == c.Value)">@c.Text</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="form-group">
+        <label class="form-label">Lọc tồn</label>
+        <select name="stockFilter" class="form-select form-select-sm" style="width:160px">
+            <option value="">Tất cả</option>
+            <option value="low" selected="@(Context.Request.Query["stockFilter"] == "low")">Sắp hết (≤ 5)</option>
+            <option value="warning" selected="@(Context.Request.Query["stockFilter"] == "warning")">Dưới 20</option>
+            <option value="instock" selected="@(Context.Request.Query["stockFilter"] == "instock")">Còn hàng (&gt; 0)</option>
+            <option value="out" selected="@(Context.Request.Query["stockFilter"] == "out")">Hết hàng (= 0)</option>
+        </select>
+    </div>
+    <div class="form-group">
         <label class="form-label">&nbsp;</label>
         <button type="submit" class="btn btn-dark btn-sm"><i class="bi bi-search"></i> Lọc</button>
         <a href="@Url.Action("Stock")" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg"></i> Xóa lọc</a>

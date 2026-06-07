@@ -4,6 +4,10 @@
     var products = ViewBag.Products as List<QuanLyBanHang.Models.Product>;
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/admin-promotions.css" asp-append-version="true" />
+}
+
 <div class="page-header">
     <div>
         <h3><i class="bi bi-plus-circle"></i> @ViewData["Title"]</h3>
@@ -11,83 +15,97 @@
     </div>
 </div>
 
-<div class="form-card">
-    <div class="card-header"><h5>Thông tin chương trình</h5></div>
-    <form method="post">
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-6">
-                    <label asp-for="Name" class="form-label"></label>
-                    <input asp-for="Name" class="form-control" placeholder="Tên chương trình..." />
-                    <span asp-validation-for="Name" class="text-danger small"></span>
+<form method="post" class="promo-section">
+    <div class="promo-section-title">
+        <i class="bi bi-ticket-perforated text-danger"></i> Thông tin chương trình
+    </div>
+    <div class="promo-section-body">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label asp-for="Name" class="form-label"></label>
+                <input asp-for="Name" class="form-control" placeholder="Tên chương trình..." />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+            <div class="col-md-6">
+                <label asp-for="Code" class="form-label">Mã khuyến mãi</label>
+                <div class="input-group">
+                    <input asp-for="Code" class="form-control" placeholder="Để trống để tự động tạo..." id="promoCode" />
+                    <button type="button" class="btn btn-outline-secondary" onclick="generateCode()" title="Tạo mã tự động"><i class="bi bi-arrow-repeat"></i></button>
                 </div>
-                <div class="col-md-6">
-                    <label asp-for="Code" class="form-label">Mã khuyến mãi</label>
-                    <div class="input-group">
-                        <input asp-for="Code" class="form-control" placeholder="Để trống để tự động tạo..." id="promoCode" />
-                        <button type="button" class="btn btn-outline-secondary" onclick="generateCode()" title="Tạo mã tự động"><i class="bi bi-arrow-repeat"></i></button>
-                    </div>
-                    <span asp-validation-for="Code" class="text-danger small"></span>
+                <span asp-validation-for="Code" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="DiscountType" class="form-label">Loại giảm giá</label>
+                <select asp-for="DiscountType" class="form-select">
+                    <option value="Percentage">Phần trăm (%)</option>
+                    <option value="Fixed">Giảm thẳng (₫)</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="DiscountValue" class="form-label">Giá trị giảm</label>
+                <input asp-for="DiscountValue" class="form-control" type="number" step="0.01" min="0" />
+                <span asp-validation-for="DiscountValue" class="text-danger small"></span>
+            </div>
+            <div class="col-md-4">
+                <label asp-for="MinOrderValue" class="form-label">Đơn tối thiểu</label>
+                <input asp-for="MinOrderValue" class="form-control" type="number" step="1000" min="0" placeholder="Không yêu cầu" />
+            </div>
+            <div class="col-md-3">
+                <label asp-for="StartDate" class="form-label">Ngày bắt đầu</label>
+                <input asp-for="StartDate" class="form-control" type="date" />
+            </div>
+            <div class="col-md-3">
+                <label asp-for="EndDate" class="form-label">Ngày kết thúc</label>
+                <input asp-for="EndDate" class="form-control" type="date" />
+            </div>
+            <div class="col-md-3">
+                <label asp-for="MaxUsageCount" class="form-label">Tổng lượt tối đa</label>
+                <input asp-for="MaxUsageCount" class="form-control" type="number" min="0" placeholder="Không giới hạn" />
+                <span class="form-text small text-muted">Để trống nếu không giới hạn.</span>
+            </div>
+            <div class="col-md-3">
+                <label asp-for="MaxUsagePerCustomer" class="form-label">Lượt/Khách hàng</label>
+                <input asp-for="MaxUsagePerCustomer" class="form-control" type="number" min="0" placeholder="Không giới hạn" />
+                <span class="form-text small text-muted">VD: 1 = chỉ dùng 1 lần.</span>
+            </div>
+            <div class="col-12">
+                <label asp-for="Description" class="form-label">Mô tả</label>
+                <textarea asp-for="Description" class="form-control" rows="2" placeholder="Mô tả chương trình..."></textarea>
+            </div>
+            <div class="col-12">
+                <div class="form-check">
+                    <input asp-for="IsActive" class="form-check-input" checked />
+                    <label asp-for="IsActive" class="form-check-label">Kích hoạt ngay</label>
                 </div>
-                <div class="col-md-6">
-                    <label asp-for="DiscountType" class="form-label">Loại giảm giá</label>
-                    <select asp-for="DiscountType" class="form-select">
-                        <option value="Percentage">Phần trăm (%)</option>
-                        <option value="Fixed">Giảm thẳng (₫)</option>
-                    </select>
+            </div>
+            <div class="col-12">
+                <label class="form-label">Áp dụng cho sản phẩm <span class="text-danger">*</span> <small class="text-muted">(chọn ít nhất 1 sản phẩm)</small></label>
+                <div class="promo-products-toolbar">
+                    <input type="text" class="promo-products-search" id="promoProductSearch" placeholder="Tìm sản phẩm..." onkeyup="filterProducts()" />
+                    <button type="button" class="btn btn-outline-dark btn-sm" onclick="selectAllProducts(true)"><i class="bi bi-check-all me-1"></i>Chọn tất</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectAllProducts(false)"><i class="bi bi-x-lg me-1"></i>Bỏ hết</button>
+                    <span class="promo-products-count" id="productCount">@(products?.Count ?? 0) sản phẩm</span>
                 </div>
-                <div class="col-md-3">
-                    <label asp-for="DiscountValue" class="form-label">Giá trị giảm</label>
-                    <input asp-for="DiscountValue" class="form-control" type="number" step="0.01" min="0" />
-                    <span asp-validation-for="DiscountValue" class="text-danger small"></span>
-                </div>
-                <div class="col-md-3">
-                    <label asp-for="MinOrderValue" class="form-label">Đơn tối thiểu</label>
-                    <input asp-for="MinOrderValue" class="form-control" type="number" step="1000" min="0" placeholder="Không yêu cầu" />
-                </div>
-                <div class="col-md-3">
-                    <label asp-for="StartDate" class="form-label">Ngày bắt đầu</label>
-                    <input asp-for="StartDate" class="form-control" type="date" />
-                </div>
-                <div class="col-md-3">
-                    <label asp-for="EndDate" class="form-label">Ngày kết thúc</label>
-                    <input asp-for="EndDate" class="form-control" type="date" />
-                </div>
-                <div class="col-12">
-                    <label asp-for="Description" class="form-label">Mô tả</label>
-                    <textarea asp-for="Description" class="form-control" rows="2" placeholder="Mô tả chương trình..."></textarea>
-                </div>
-                <div class="col-12">
-                    <div class="form-check">
-                        <input asp-for="IsActive" class="form-check-input" checked />
-                        <label asp-for="IsActive" class="form-check-label">Kích hoạt ngay</label>
-                    </div>
-                </div>
-                <div class="col-12">
-                    <label class="form-label">Áp dụng cho sản phẩm</label>
-                    <div class="row g-1" style="max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px">
-                        @if (products != null)
+                <div class="promo-products-grid" id="promoProductGrid">
+                    @if (products != null)
+                    {
+                        foreach (var p in products)
                         {
-                            foreach (var p in products)
-                            {
-                                <div class="col-md-4">
-                                    <div class="form-check">
-                                        <input type="checkbox" name="productIds" value="@p.Id" class="form-check-input" id="prod@(p.Id)" />
-                                        <label class="form-check-label small" for="prod@(p.Id)">@p.Name (@p.Sku)</label>
-                                    </div>
-                                </div>
-                            }
+                            <div class="form-check" data-name="@p.Name.ToLower()" data-sku="@p.Sku.ToLower()">
+                                <input type="checkbox" name="productIds" value="@p.Id" class="form-check-input" id="prod@(p.Id)" />
+                                <label class="form-check-label" for="prod@(p.Id)">@p.Name <small class="text-muted">(@p.Sku)</small></label>
+                            </div>
                         }
-                    </div>
+                    }
                 </div>
             </div>
         </div>
-        <div class="card-footer">
-            <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i> Hủy</a>
-            <button type="submit" class="btn btn-dark"><i class="bi bi-check-lg me-1"></i> Lưu</button>
-        </div>
-    </form>
-</div>
+    </div>
+    <div class="promo-section-footer">
+        <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i> Hủy</a>
+        <button type="submit" class="btn btn-dark"><i class="bi bi-check-lg me-1"></i> Lưu</button>
+    </div>
+</form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
@@ -97,5 +115,45 @@
             const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
             document.getElementById('promoCode').value = prefix + rand;
         }
+
+        function selectAllProducts(select) {
+            var grid = document.getElementById('promoProductGrid');
+            grid.querySelectorAll('.form-check').forEach(function(el) {
+                if (el.style.display !== 'none') {
+                    var cb = el.querySelector('input[type="checkbox"]');
+                    if (cb) cb.checked = select;
+                }
+            });
+            updateCount();
+        }
+
+        function filterProducts() {
+            var q = document.getElementById('promoProductSearch').value.toLowerCase().trim();
+            var grid = document.getElementById('promoProductGrid');
+            var visible = 0;
+            grid.querySelectorAll('.form-check').forEach(function(el) {
+                var name = el.dataset.name || '';
+                var sku = el.dataset.sku || '';
+                var match = !q || name.indexOf(q) >= 0 || sku.indexOf(q) >= 0;
+                el.style.display = match ? '' : 'none';
+                if (match) visible++;
+            });
+            document.getElementById('productCount').textContent = visible + ' sản phẩm';
+        }
+
+        function updateCount() {
+            var grid = document.getElementById('promoProductGrid');
+            var checked = grid.querySelectorAll('input[type="checkbox"]:checked').length;
+            var total = grid.querySelectorAll('input[type="checkbox"]').length;
+            document.getElementById('productCount').textContent = checked + '/' + total + ' đã chọn';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var grid = document.getElementById('promoProductGrid');
+            grid.querySelectorAll('input[type="checkbox"]').forEach(function(cb) {
+                cb.addEventListener('change', updateCount);
+            });
+            updateCount();
+        });
     </script>
 }

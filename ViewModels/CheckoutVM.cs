@@ -42,6 +42,9 @@ public class CheckoutVM
         "Thừa Thiên Huế", "Tiền Giang", "Trà Vinh", "Tuyên Quang",
         "Vĩnh Long", "Vĩnh Phúc", "Yên Bái"
     };
+
+    public List<QuanLyBanHang.Models.CustomerAddress> SavedAddresses { get; set; } = new();
+    public long? SelectedAddressId { get; set; }
 }
 
 public class CartAjaxResult

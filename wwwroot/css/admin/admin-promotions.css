@@ -1,0 +1,217 @@
+/* Admin — Khuyến mãi */
+
+.promo-section {
+  background: #fff;
+  border: 1px solid #e8eaed;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+}
+.promo-section-title {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e8eaed;
+  background: #fafbfc;
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.promo-section-body {
+  padding: 24px;
+}
+.promo-section-body .form-label {
+  font-weight: 600;
+  font-size: 13px;
+  color: #374151;
+  margin-bottom: 5px;
+}
+.promo-section-body .form-control,
+.promo-section-body .form-select {
+  border-radius: 8px;
+  border: 1.5px solid #e8eaed;
+  font-size: 14px;
+  padding: 0.55rem 0.85rem;
+  transition: border .2s, box-shadow .2s;
+}
+.promo-section-body .form-control:focus,
+.promo-section-body .form-select:focus {
+  border-color: #d70018;
+  box-shadow: 0 0 0 3px rgba(215,0,24,.1);
+}
+.promo-section-body .form-check-label {
+  font-size: 13px;
+}
+.promo-section-footer {
+  padding: 14px 24px;
+  border-top: 1px solid #e8eaed;
+  background: #fafbfc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* Product checkboxes grid */
+.promo-products-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.promo-products-toolbar .btn-sm {
+  font-size: 12px;
+  border-radius: 6px;
+}
+.promo-products-search {
+  flex: 1;
+  min-width: 140px;
+  border-radius: 6px;
+  border: 1.5px solid #e8eaed;
+  font-size: 13px;
+  padding: 5px 10px;
+  outline: none;
+  transition: border .2s;
+}
+.promo-products-search:focus {
+  border-color: #d70018;
+  box-shadow: 0 0 0 3px rgba(215,0,24,.1);
+}
+.promo-products-count {
+  font-size: 12px;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+.promo-products-grid {
+  max-height: 280px;
+  overflow-y: auto;
+  border: 1px solid #e8eaed;
+  border-radius: 8px;
+  padding: 6px 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 2px;
+}
+.promo-products-grid .form-check {
+  padding: 3px 6px;
+  margin: 0;
+  border-radius: 6px;
+  transition: background .15s;
+}
+.promo-products-grid .form-check:hover {
+  background: #f8fafc;
+}
+.promo-products-grid .form-check-input:checked ~ .form-check-label {
+  color: #d70018;
+  font-weight: 600;
+}
+.promo-products-grid .form-check-label {
+  font-size: 13px;
+  line-height: 1.3;
+  cursor: pointer;
+}
+
+/* Usage badges */
+.usage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.usage-badge.available { background: #ecfdf5; color: #15803d; }
+.usage-badge.exhausted { background: #fef2f2; color: #991b1b; }
+.usage-badge.limited  { background: #fff7ed; color: #c2410c; }
+.usage-badge.unlimited{ background: #f0f2f5; color: #64748b; }
+
+/* Stats card */
+.promo-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-top: 20px;
+}
+.promo-stats .stat-box {
+  background: #fff;
+  border: 1px solid #e8eaed;
+  border-radius: 10px;
+  padding: 18px 16px;
+  text-align: center;
+}
+.promo-stats .stat-box .stat-num {
+  font-size: 20px;
+  font-weight: 800;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+.promo-stats .stat-box .stat-label {
+  font-size: 12px;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+}
+
+/* Usage progress bar (inline) */
+.usage-progress-bar {
+  width: 100%;
+  max-width: 100px;
+  height: 4px;
+  background: #e8eaed;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 2px auto 0;
+}
+.usage-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width .3s;
+}
+
+/* Badge type */
+.badge-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: #f0f2f5;
+  color: #475569;
+}
+
+/* Promo stat items (detail/delete) */
+.promo-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: #f8fafc;
+  border: 1px solid #e8eaed;
+  border-radius: 10px;
+}
+.promo-stat-item i {
+  font-size: 20px;
+  color: #d70018;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e8eaed;
+}
+.promo-stat-item small {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+}
+.promo-stat-item strong {
+  font-size: 14px;
+  color: #1e293b;
+}

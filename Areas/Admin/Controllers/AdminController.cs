@@ -15,18 +15,21 @@ public class AdminController : Controller
     {
         ViewBag.ProductCount = await _db.Products.CountAsync();
         ViewBag.CustomerCount = await _db.Customers.CountAsync();
-        ViewBag.SalesCount = await _db.SalesInvoices.CountAsync();
-        ViewBag.Revenue = await _db.SalesInvoices.SumAsync(x => (decimal?)x.Total) ?? 0;
+
+        var activeInvoices = _db.SalesInvoices.Where(x => x.Status != "Cancelled");
+
+        ViewBag.SalesCount = await activeInvoices.CountAsync();
+        ViewBag.Revenue = await activeInvoices.SumAsync(x => (decimal?)x.Total) ?? 0;
 
         var today = DateTime.Today;
         var yesterday = today.AddDays(-1);
 
-        ViewBag.OrdersToday = await _db.SalesInvoices.CountAsync(x => x.CreatedAt >= today);
-        ViewBag.OrdersYesterday = await _db.SalesInvoices.CountAsync(x => x.CreatedAt >= yesterday && x.CreatedAt < today);
-        ViewBag.UnpaidCount = await _db.SalesInvoices.CountAsync(x => x.PaymentStatus != "Paid");
+        ViewBag.OrdersToday = await activeInvoices.CountAsync(x => x.CreatedAt >= today);
+        ViewBag.OrdersYesterday = await activeInvoices.CountAsync(x => x.CreatedAt >= yesterday && x.CreatedAt < today);
+        ViewBag.UnpaidCount = await _db.SalesInvoices.CountAsync(x => x.PaymentStatus != "Paid" && x.Status != "Cancelled");
 
-        ViewBag.RevenueToday = await _db.SalesInvoices.Where(x => x.CreatedAt >= today).SumAsync(x => (decimal?)x.Total) ?? 0;
-        ViewBag.RevenueYesterday = await _db.SalesInvoices.Where(x => x.CreatedAt >= yesterday && x.CreatedAt < today).SumAsync(x => (decimal?)x.Total) ?? 0;
+        ViewBag.RevenueToday = await activeInvoices.Where(x => x.CreatedAt >= today).SumAsync(x => (decimal?)x.Total) ?? 0;
+        ViewBag.RevenueYesterday = await activeInvoices.Where(x => x.CreatedAt >= yesterday && x.CreatedAt < today).SumAsync(x => (decimal?)x.Total) ?? 0;
 
         ViewBag.LowStock = await _db.Products
             .Where(p => p.Stock <= 5 && p.IsActive)
@@ -65,9 +68,10 @@ public class AdminController : Controller
 
         // Top 5 products by revenue
         var thirtyDaysAgo = DateTime.Today.AddDays(-30);
+
         var topProducts = await _db.SalesItems
             .Include(i => i.Product)
-            .Where(i => i.Invoice!.CreatedAt >= thirtyDaysAgo && i.Invoice.PaymentStatus == "Paid")
+            .Where(i => i.Invoice != null && i.Invoice.Status != "Cancelled" && i.Invoice.PaymentStatus == "Paid" && i.Invoice.CreatedAt >= thirtyDaysAgo)
             .GroupBy(i => i.Product!.Name)
             .Select(g => new { Name = g.Key, Qty = g.Sum(i => i.Quantity), Revenue = g.Sum(i => (decimal?)i.LineTotal) ?? 0 })
             .OrderByDescending(x => x.Revenue)
@@ -80,7 +84,7 @@ public class AdminController : Controller
         var revenueByCategory = await _db.SalesItems
             .Include(i => i.Product)
             .ThenInclude(p => p!.Category)
-            .Where(i => i.Invoice!.CreatedAt >= thirtyDaysAgo && i.Invoice.PaymentStatus == "Paid")
+            .Where(i => i.Invoice != null && i.Invoice.Status != "Cancelled" && i.Invoice.PaymentStatus == "Paid" && i.Invoice.CreatedAt >= thirtyDaysAgo)
             .GroupBy(i => i.Product!.Category!.Name)
             .Select(g => new { Category = g.Key, Total = g.Sum(i => (decimal?)i.LineTotal) ?? 0 })
             .OrderByDescending(x => x.Total)

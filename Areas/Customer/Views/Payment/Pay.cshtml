@@ -98,11 +98,11 @@
                         </div>
                         <div class="pay-bill-info">
                             <span class="label">Ngân hàng</span>
-                            <span class="value">NCB (Ngân hàng Quốc Dân)</span>
+                            <span class="value">MB Bank (Ngân hàng Quân Đội)</span>
                             <span class="label">Số tài khoản</span>
-                            <span class="value" style="font-size:16px;">123456789</span>
+                            <span class="value" style="font-size:16px;">0364921797</span>
                             <span class="label">Chủ tài khoản</span>
-                            <span class="value">NGUYEN VAN A</span>
+                            <span class="value">Tô Ngọc Viên</span>
                             <span class="label">Số tiền</span>
                             <span class="value" style="color:var(--co-red);">@string.Format("{0:N0}₫", Model.Total)</span>
                             <span class="label">Nội dung</span>
@@ -152,8 +152,7 @@
                     @if (isBank)
                     {
                         <div class="qr-box">
-                            <img src="@ViewBag.QR" alt="QR thanh toán"
-                                 onerror="this.parentElement.innerHTML='<div class=\\'text-muted small py-4\\'><i class=\\'bi bi-qr-code-scan\\' style=\\'font-size:48px;\\'></i><br>QR Code</div>'" />
+                            <img src="@ViewBag.QR" alt="QR thanh toán" />
                             <div class="small text-muted mt-2">Quét mã QR để thanh toán</div>
                         </div>
 

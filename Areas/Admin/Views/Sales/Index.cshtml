@@ -9,6 +9,7 @@
         <p>Quản lý đơn hàng bán</p>
     </div>
     <div class="page-actions">
+        <a class="btn btn-dark btn-sm" asp-action="Create"><i class="bi bi-plus-lg me-1"></i>Tạo đơn hàng</a>
     </div>
 </div>
 
@@ -21,19 +22,19 @@
         <label class="form-label">Trạng thái</label>
         <select name="status" class="form-select form-select-sm" style="width:150px">
             <option value="">Tất cả</option>
-            <option value="Pending" selected="@(Context.Request.Query["status"] == "Pending")">Pending</option>
-            <option value="Confirmed" selected="@(Context.Request.Query["status"] == "Confirmed")">Confirmed</option>
-            <option value="Shipped" selected="@(Context.Request.Query["status"] == "Shipped")">Shipped</option>
-            <option value="Completed" selected="@(Context.Request.Query["status"] == "Completed")">Completed</option>
-            <option value="Cancelled" selected="@(Context.Request.Query["status"] == "Cancelled")">Cancelled</option>
+            <option value="Pending" selected="@(Context.Request.Query["status"] == "Pending")">Chờ xác nhận</option>
+            <option value="Confirmed" selected="@(Context.Request.Query["status"] == "Confirmed")">Đã xác nhận</option>
+            <option value="Shipped" selected="@(Context.Request.Query["status"] == "Shipped")">Đang giao</option>
+            <option value="Completed" selected="@(Context.Request.Query["status"] == "Completed")">Hoàn thành</option>
+            <option value="Cancelled" selected="@(Context.Request.Query["status"] == "Cancelled")">Đã hủy</option>
         </select>
     </div>
     <div class="form-group">
         <label class="form-label">Thanh toán</label>
         <select name="paymentStatus" class="form-select form-select-sm" style="width:150px">
             <option value="">Tất cả</option>
-            <option value="Unpaid" selected="@(Context.Request.Query["paymentStatus"] == "Unpaid")">Unpaid</option>
-            <option value="Paid" selected="@(Context.Request.Query["paymentStatus"] == "Paid")">Paid</option>
+            <option value="Unpaid" selected="@(Context.Request.Query["paymentStatus"] == "Unpaid")">Chưa TT</option>
+            <option value="Paid" selected="@(Context.Request.Query["paymentStatus"] == "Paid")">Đã TT</option>
         </select>
     </div>
     <div class="form-group">
@@ -60,12 +61,12 @@
             <tbody>
                 @foreach (var x in Model)
                 {
-                    <tr>
+                    <tr id="order-@x.Id">
                         <td class="fw-bold">@(!string.IsNullOrWhiteSpace(x.Code) ? x.Code : $"#{x.Id}")</td>
                         <td>@(x.Customer?.Name ?? x.ReceiverName ?? "Khách lẻ")</td>
                         <td>@x.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
                         <td class="text-center">
-                            <span class="status-badge @(x.Status=="Completed" ? "success" : x.Status=="Cancelled" ? "danger" : x.Status=="Shipped" ? "info" : "secondary")">@SalesInvoice.DisplayStatus(x.Status)</span>
+                            <span class="status-badge @(x.Status=="Completed" ? "success" : x.Status=="Cancelled" ? "danger" : x.Status=="Shipped" ? "info" : "secondary")" data-order-id="@x.Id" data-order-status="@x.Status">@SalesInvoice.DisplayStatus(x.Status)</span>
                         </td>
                         <td class="text-center">
                             <span class="status-badge @(x.PaymentStatus=="Paid" ? "success" : x.PaymentStatus=="Pending" ? "warning" : "secondary")">@SalesInvoice.DisplayPaymentMethod(x.PaymentMethod) • @SalesInvoice.DisplayPaymentStatus(x.PaymentStatus)</span>

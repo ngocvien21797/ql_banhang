@@ -1,0 +1,51 @@
+@model QuanLyBanHang.Models.Article
+@{
+    ViewData["Title"] = Model.Title;
+}
+@section Styles {
+    <link rel="stylesheet" href="~/css/customer/news.css" asp-append-version="true" />
+}
+
+<div class="d-flex align-items-start justify-content-between mb-4">
+    <div></div>
+    <a asp-action="Index" class="btn-back-shop">
+        <i class="bi bi-arrow-left me-1"></i>Quay lại tin tức
+    </a>
+</div>
+
+<article>
+    @if (!string.IsNullOrWhiteSpace(Model.ImagePath))
+    {
+        <div class="mb-4 text-center">
+            <img src="@Model.ImagePath" alt="@Model.Title"
+                 style="max-width:100%;max-height:400px;border-radius:12px;object-fit:cover;" />
+        </div>
+    }
+
+    <h2 class="mb-2">@Model.Title</h2>
+
+    <div class="text-muted small mb-4">
+        <i class="bi bi-calendar3 me-1"></i>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+        @if (!string.IsNullOrWhiteSpace(Model.CreatedBy))
+        {
+            <span class="ms-3"><i class="bi bi-person me-1"></i>@Model.CreatedBy</span>
+        }
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Model.Summary))
+    {
+        <div class="lead mb-4 p-3 bg-light rounded article-summary">
+            @Model.Summary
+        </div>
+    }
+
+    <div class="article-body">
+        @Html.Raw(Model.Content.Replace("\n", "<br>"))
+    </div>
+</article>
+
+<div class="text-end mt-4">
+    <a asp-action="Index" class="btn btn-outline-danger sf-pill">
+        Xem thêm bài viết <i class="bi bi-arrow-right ms-1"></i>
+    </a>
+</div>

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using QuanLyBanHang.Data;
 using QuanLyBanHang.ViewModels;
@@ -12,12 +13,29 @@ public class InventoryController : Controller
     private readonly SalesDbContext _db;
     public InventoryController(SalesDbContext db) => _db = db;
 
-    public async Task<IActionResult> Stock(string? search, int page = 1, int pageSize = 10)
+    public async Task<IActionResult> Stock(string? search, int? categoryId, string? stockFilter, int page = 1, int pageSize = 10)
     {
-        var query = _db.Products.AsQueryable();
+        var query = _db.Products.Include(p => p.Category).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(search))
             query = query.Where(p => p.Name.Contains(search) || p.Sku.Contains(search));
+
+        if (categoryId > 0)
+            query = query.Where(p => p.CategoryId == categoryId);
+
+        if (!string.IsNullOrWhiteSpace(stockFilter))
+        {
+            query = stockFilter switch
+            {
+                "low" => query.Where(p => p.Stock <= 5),
+                "warning" => query.Where(p => p.Stock <= 20),
+                "instock" => query.Where(p => p.Stock > 0),
+                "out" => query.Where(p => p.Stock == 0),
+                _ => query
+            };
+        }
+
+        ViewBag.Categories = new SelectList(await _db.Categories.OrderBy(x => x.Name).ToListAsync(), "Id", "Name");
 
         var total = await query.CountAsync();
 
@@ -30,6 +48,8 @@ public class InventoryController : Controller
 
         var routeValues = new Dictionary<string, string>();
         if (!string.IsNullOrWhiteSpace(search)) routeValues["search"] = search;
+        if (categoryId > 0) routeValues["categoryId"] = categoryId.ToString();
+        if (!string.IsNullOrWhiteSpace(stockFilter)) routeValues["stockFilter"] = stockFilter;
 
         ViewBag.Pagination = new PaginationModel
         {

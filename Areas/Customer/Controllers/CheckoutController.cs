@@ -31,18 +31,34 @@ public class CheckoutController : Controller
         var applicablePromos = await LoadApplicablePromotionsAsync(productIds, subtotal);
         ViewBag.ApplicablePromotions = applicablePromos;
 
+        var savedAddresses = new List<QuanLyBanHang.Models.CustomerAddress>();
+        if (customer != null)
+        {
+            savedAddresses = await _db.CustomerAddresses
+                .Where(a => a.CustomerId == customer.Id)
+                .OrderByDescending(a => a.IsDefault)
+                .ThenBy(a => a.Id)
+                .ToListAsync();
+        }
+
+        var defaultAddr = savedAddresses.FirstOrDefault(a => a.IsDefault);
+
+        var userEmail = customer?.Email ?? User.Identity?.Name;
         var vm = new CheckoutVM
         {
-            ReceiverName = customer?.Name ?? User.Identity?.Name ?? "",
-            Phone = customer?.Phone,
-            Address = customer?.Address,
+            ReceiverName = defaultAddr?.ReceiverName ?? customer?.Name ?? User.Identity?.Name ?? "",
+            Phone = defaultAddr?.Phone ?? customer?.Phone,
+            Email = userEmail,
+            Address = defaultAddr?.Address ?? customer?.Address,
+            SelectedAddressId = defaultAddr?.Id,
             PaymentMethod = "COD",
             ShippingMethod = "standard",
             Lines = lines,
             Subtotal = subtotal,
             ShippingFee = 0,
             Discount = 0,
-            Total = subtotal
+            Total = subtotal,
+            SavedAddresses = savedAddresses
         };
 
         return View(vm);
@@ -80,17 +96,33 @@ public class CheckoutController : Controller
         vm.Subtotal = lines.Sum(x => x.LineTotal);
 
         if (string.IsNullOrWhiteSpace(vm.ReceiverName))
-            ModelState.AddModelError("ReceiverName", "Vui lòng nhập họ tên.");
+            ModelState.AddModelError("ReceiverName", "Vui lòng chọn hoặc thêm địa chỉ giao hàng.");
+        else if (vm.ReceiverName.Trim().Length > 150)
+            ModelState.AddModelError("ReceiverName", "Họ tên không quá 150 ký tự.");
+
         if (string.IsNullOrWhiteSpace(vm.Phone))
-            ModelState.AddModelError("Phone", "Vui lòng nhập số điện thoại.");
-        else if (!System.Text.RegularExpressions.Regex.IsMatch(vm.Phone, @"^0[0-9]{9,10}$"))
+            ModelState.AddModelError("Phone", "Vui lòng chọn hoặc thêm địa chỉ giao hàng.");
+        else if (!System.Text.RegularExpressions.Regex.IsMatch(vm.Phone.Trim(), @"^0[0-9]{9,10}$"))
             ModelState.AddModelError("Phone", "Số điện thoại không hợp lệ (10-11 số, bắt đầu bằng 0).");
-        if (!string.IsNullOrWhiteSpace(vm.Email) && !System.Text.RegularExpressions.Regex.IsMatch(vm.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+
+        if (string.IsNullOrWhiteSpace(vm.Email))
+            ModelState.AddModelError("Email", "Vui lòng nhập email để nhận xác nhận đơn hàng.");
+        else if (!System.Text.RegularExpressions.Regex.IsMatch(vm.Email.Trim(), @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
             ModelState.AddModelError("Email", "Email không hợp lệ.");
+        else if (vm.Email.Trim().Length > 100)
+            ModelState.AddModelError("Email", "Email không quá 100 ký tự.");
+
         if (string.IsNullOrWhiteSpace(vm.Address))
-            ModelState.AddModelError("Address", "Vui lòng nhập địa chỉ.");
+            ModelState.AddModelError("Address", "Vui lòng chọn hoặc thêm địa chỉ giao hàng.");
+        else if (vm.Address.Trim().Length > 255)
+            ModelState.AddModelError("Address", "Địa chỉ không quá 255 ký tự.");
+
+        if (string.IsNullOrWhiteSpace(vm.ReceiverName) || string.IsNullOrWhiteSpace(vm.Phone) || string.IsNullOrWhiteSpace(vm.Address))
+            ModelState.AddModelError("SelectedAddressId", "Vui lòng chọn địa chỉ giao hàng hoặc thêm địa chỉ mới.");
 
         vm.ShippingFee = CalcShipping(vm.ShippingMethod, vm.Province);
+        var uid = GetUserId();
+        var customerId = await _db.Users.Where(u => u.Id == uid).Select(u => u.CustomerId).FirstOrDefaultAsync();
         if (!string.IsNullOrWhiteSpace(vm.VoucherCode))
         {
             var promo = await _db.Promotions
@@ -103,11 +135,38 @@ public class CheckoutController : Controller
             {
                 if (!promo.MinOrderValue.HasValue || vm.Subtotal >= promo.MinOrderValue.Value)
                 {
-                    bool eligible = true;
-                    if (promo.PromotionProducts.Count > 0)
+                    bool eligible;
+                    if (promo.PromotionProducts.Count == 0)
+                    {
+                        ModelState.AddModelError("VoucherCode", "Mã giảm giá không áp dụng cho sản phẩm nào.");
+                        eligible = false;
+                    }
+                    else
                     {
                         var eligibleIds = promo.PromotionProducts.Select(pp => pp.ProductId).ToHashSet();
                         eligible = lines.Any(l => eligibleIds.Contains(l.Product.Id));
+                        if (!eligible)
+                            ModelState.AddModelError("VoucherCode", "Mã giảm giá không áp dụng cho sản phẩm trong giỏ hàng.");
+                    }
+                    if (eligible)
+                    {
+                        // Check max usage count
+                        if (promo.MaxUsageCount.HasValue && promo.UsageCount >= promo.MaxUsageCount.Value)
+                        {
+                            ModelState.AddModelError("VoucherCode", "Mã giảm giá đã hết lượt sử dụng.");
+                            eligible = false;
+                        }
+                        // Check max usage per customer
+                        else if (promo.MaxUsagePerCustomer.HasValue && customerId.HasValue)
+                        {
+                            var usedCount = await _db.PromotionUsages
+                                .CountAsync(u => u.PromotionId == promo.Id && u.CustomerId == customerId.Value);
+                            if (usedCount >= promo.MaxUsagePerCustomer.Value)
+                            {
+                                ModelState.AddModelError("VoucherCode", "Bạn đã hết lượt sử dụng mã này.");
+                                eligible = false;
+                            }
+                        }
                     }
                     if (eligible)
                     {
@@ -118,8 +177,6 @@ public class CheckoutController : Controller
                         if (vm.Discount > vm.Subtotal) vm.Discount = vm.Subtotal;
                         ViewBag.VoucherMsg = $"Áp dụng mã {promo.Code} thành công!";
                     }
-                    else
-                        ModelState.AddModelError("VoucherCode", "Giỏ hàng của bạn không có sản phẩm nào thuộc chương trình này.");
                 }
                 else
                     ModelState.AddModelError("VoucherCode", $"Đơn hàng tối thiểu {promo.MinOrderValue.Value:N0}₫ để áp dụng mã này.");
@@ -129,17 +186,21 @@ public class CheckoutController : Controller
         }
         vm.Total = vm.Subtotal + vm.ShippingFee - vm.Discount;
 
-        var uid = GetUserId();
-
         if (!ModelState.IsValid)
         {
             ViewBag.ValidationErrors = true;
             var productIds = lines.Select(l => l.Product.Id).ToHashSet();
             ViewBag.ApplicablePromotions = await LoadApplicablePromotionsAsync(productIds, vm.Subtotal);
+            if (customerId.HasValue)
+            {
+                vm.SavedAddresses = await _db.CustomerAddresses
+                    .Where(a => a.CustomerId == customerId)
+                    .OrderByDescending(a => a.IsDefault)
+                    .ToListAsync();
+            }
             return View("Index", vm);
         }
 
-        var customerId = await _db.Users.Where(u => u.Id == uid).Select(u => u.CustomerId).FirstOrDefaultAsync();
         if (customerId == null) return Forbid();
 
         var paymentMethod = (vm.PaymentMethod ?? "COD").ToUpperInvariant();
@@ -156,7 +217,7 @@ public class CheckoutController : Controller
                 CreatedBy = uid,
                 ReceiverName = vm.ReceiverName.Trim(),
                 ShippingPhone = vm.Phone?.Trim(),
-                ShippingAddress = BuildFullAddress(vm.Address, vm.Ward, vm.District, vm.Province),
+                ShippingAddress = vm.Address?.Trim(),
                 Note = string.IsNullOrWhiteSpace(vm.Note) ? null : vm.Note.Trim(),
                 Status = "Pending",
                 PaymentMethod = paymentMethod,
@@ -209,6 +270,24 @@ public class CheckoutController : Controller
             inv.Total = total + vm.ShippingFee - vm.Discount;
             await _db.SaveChangesAsync();
 
+            // Record promotion usage
+            if (!string.IsNullOrWhiteSpace(vm.VoucherCode))
+            {
+                var promo = await _db.Promotions.FirstOrDefaultAsync(p => p.Code == vm.VoucherCode.Trim().ToUpper());
+                if (promo != null && customerId.HasValue)
+                {
+                    promo.UsageCount++;
+                    _db.PromotionUsages.Add(new PromotionUsage
+                    {
+                        PromotionId = promo.Id,
+                        CustomerId = customerId.Value,
+                        SalesInvoiceId = inv.Id,
+                        UsedAt = DateTime.Now
+                    });
+                    await _db.SaveChangesAsync();
+                }
+            }
+
             await tx.CommitAsync();
 
             HttpContext.Session.Remove(CartKey);
@@ -222,6 +301,35 @@ public class CheckoutController : Controller
                 CreatedAt = DateTime.Now
             });
             await _db.SaveChangesAsync();
+
+            // Auto-save address to address book (only if not selecting a saved one)
+            if (!vm.SelectedAddressId.HasValue && customerId.HasValue)
+            {
+                var receiverName = vm.ReceiverName?.Trim() ?? "";
+                var phone = vm.Phone?.Trim() ?? "";
+                var addr = vm.Address?.Trim() ?? "";
+
+                var exists = await _db.CustomerAddresses.AnyAsync(a =>
+                    a.CustomerId == customerId.Value &&
+                    a.ReceiverName == receiverName &&
+                    a.Phone == phone &&
+                    a.Address == addr);
+
+                if (!exists)
+                {
+                    var count = await _db.CustomerAddresses.CountAsync(a => a.CustomerId == customerId.Value);
+                    _db.CustomerAddresses.Add(new QuanLyBanHang.Models.CustomerAddress
+                    {
+                        CustomerId = customerId.Value,
+                        Label = "Đã giao",
+                        ReceiverName = receiverName,
+                        Phone = phone,
+                        Address = addr,
+                        IsDefault = count == 0
+                    });
+                    await _db.SaveChangesAsync();
+                }
+            }
 
             return RedirectToAction(nameof(Success), new { id = inv.Id });
         }
@@ -299,21 +407,82 @@ public class CheckoutController : Controller
         return Json(new { success = true, fee });
     }
 
+    [HttpPost]
+    public async Task<IActionResult> GetAddress(long id)
+    {
+        var uid = GetUserId();
+        var customerId = await _db.Users.Where(u => u.Id == uid).Select(u => u.CustomerId).FirstOrDefaultAsync();
+        if (customerId == null) return Json(new { success = false });
+
+        var addr = await _db.CustomerAddresses
+            .FirstOrDefaultAsync(a => a.Id == id && a.CustomerId == customerId);
+
+        if (addr == null) return Json(new { success = false });
+
+        return Json(new
+        {
+            success = true,
+            receiverName = addr.ReceiverName,
+            phone = addr.Phone,
+            address = addr.Address
+        });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> AddAddress(string receiverName, string phone, string address, string? label)
+    {
+        var uid = GetUserId();
+        var customerId = await _db.Users.Where(u => u.Id == uid).Select(u => u.CustomerId).FirstOrDefaultAsync();
+        if (customerId == null) return Json(new { success = false, message = "Không tìm thấy khách hàng." });
+
+        if (string.IsNullOrWhiteSpace(receiverName))
+            return Json(new { success = false, message = "Vui lòng nhập họ tên." });
+        if (receiverName.Trim().Length > 150)
+            return Json(new { success = false, message = "Họ tên không quá 150 ký tự." });
+        if (string.IsNullOrWhiteSpace(phone))
+            return Json(new { success = false, message = "Vui lòng nhập số điện thoại." });
+        if (!System.Text.RegularExpressions.Regex.IsMatch(phone.Trim(), @"^0[0-9]{9,10}$"))
+            return Json(new { success = false, message = "Số điện thoại không hợp lệ (10-11 số, bắt đầu bằng 0)." });
+        if (string.IsNullOrWhiteSpace(address))
+            return Json(new { success = false, message = "Vui lòng nhập địa chỉ." });
+        if (address.Trim().Length > 255)
+            return Json(new { success = false, message = "Địa chỉ không quá 255 ký tự." });
+        if (!string.IsNullOrWhiteSpace(label) && label.Trim().Length > 100)
+            return Json(new { success = false, message = "Ghi chú không quá 100 ký tự." });
+
+        var count = await _db.CustomerAddresses.CountAsync(a => a.CustomerId == customerId.Value);
+
+        var addr = new QuanLyBanHang.Models.CustomerAddress
+        {
+            CustomerId = customerId.Value,
+            ReceiverName = receiverName.Trim(),
+            Phone = phone.Trim(),
+            Address = address.Trim(),
+            Label = string.IsNullOrWhiteSpace(label) ? null : label.Trim(),
+            IsDefault = count == 0
+        };
+
+        _db.CustomerAddresses.Add(addr);
+        await _db.SaveChangesAsync();
+
+        return Json(new
+        {
+            success = true,
+            id = addr.Id,
+            receiverName = addr.ReceiverName,
+            phone = addr.Phone,
+            address = addr.Address
+        });
+    }
+
     private decimal CalcShipping(string method, string? province)
     {
         var isFar = province != null && new[] { "Hà Nội", "Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ" }.Contains(province) == false;
         return method switch
         {
-            "fast" => isFar ? 50000 : 30000,
             "economy" => isFar ? 25000 : 15000,
             _ => isFar ? 35000 : 20000,
         };
-    }
-
-    private string BuildFullAddress(string? address, string? ward, string? district, string? province)
-    {
-        var parts = new[] { address, ward, district, province };
-        return string.Join(", ", parts.Where(p => !string.IsNullOrWhiteSpace(p)));
     }
 
     private async Task<SalesInvoice?> GetMyInvoiceAsync(long id)

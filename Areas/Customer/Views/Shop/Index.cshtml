@@ -19,6 +19,13 @@
     var isAuth = User.Identity?.IsAuthenticated == true;
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/customer/shop-filter.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/customer/promotions.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/customer/banner.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/customer/news.css" asp-append-version="true" />
+}
+
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
     <div>
         <h3 class="mb-1">Cửa hàng</h3>
@@ -40,16 +47,48 @@
     </div>
 </div>
 
-<form method="get" class="mb-3">
-    <div class="row g-2">
-        <div class="col-12 col-sm">
-            <div class="input-group input-group-sm">
-                <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+@{
+    var banners = ViewBag.Banners as List<Banner> ?? new List<Banner>();
+    var recentArticles = ViewBag.RecentArticles as List<Article> ?? new List<Article>();
+}
+
+@if (banners.Count > 0)
+{
+    <div id="bannerCarousel" class="carousel slide mb-4">
+        <div class="carousel-indicators">
+            @for (int i = 0; i < banners.Count; i++)
+            {
+                <button type="button" data-bs-target="#bannerCarousel" data-bs-slide-to="@i" class="@(i == 0 ? "active" : "")" aria-current="@(i == 0 ? "true" : null)"></button>
+            }
+        </div>
+        <div class="carousel-inner">
+            @for (int i = 0; i < banners.Count; i++)
+            {
+                var b = banners[i];
+                <div class="carousel-item @(i == 0 ? "active" : "")">
+                    <img src="@b.ImagePath" class="d-block w-100" alt="@b.Title" />
+                </div>
+            }
+        </div>
+        <button class="carousel-control-prev" type="button" data-bs-target="#bannerCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+        <button class="carousel-control-next" type="button" data-bs-target="#bannerCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
+}
+
+<form method="get" class="sf-filter-wrap">
+    <div class="row">
+        <div class="col-12 col-sm sf-filter-col-search">
+            <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
                 <input class="form-control" name="q" value="@q" placeholder="Tìm sản phẩm..." />
             </div>
         </div>
-        <div class="col-6 col-sm">
-            <select class="form-select form-select-sm" name="categoryId">
+        <div class="col-6 col-sm sf-filter-col-cat">
+            <select class="form-select" name="categoryId">
                 <option value="">Tất cả danh mục</option>
                 @foreach (var c in categories)
                 {
@@ -57,22 +96,24 @@
                 }
             </select>
         </div>
-        <div class="col-6 col-sm">
-            <select class="form-select form-select-sm" name="sort">
+        <div class="col-6 col-sm sf-filter-col-sort">
+            <select class="form-select" name="sort">
                 <option value="price_asc" selected="@(sort=="price_asc"?"selected":null)">Giá tăng dần</option>
                 <option value="price_desc" selected="@(sort=="price_desc"?"selected":null)">Giá giảm dần</option>
                 <option value="newest" selected="@(sort=="newest"?"selected":null)">Mới nhất</option>
             </select>
         </div>
-        <div class="col-6 col-sm-auto">
-            <input class="form-control form-control-sm" name="minPrice" value="@minPrice" placeholder="Giá từ" type="number" style="min-width:100px;" />
+        <div class="col-6 sf-filter-col-price">
+            <input class="form-control" name="minPrice" value="@minPrice" placeholder="Giá từ" type="number" />
         </div>
-        <div class="col-6 col-sm-auto">
-            <input class="form-control form-control-sm" name="maxPrice" value="@maxPrice" placeholder="Giá đến" type="number" style="min-width:100px;" />
+        <div class="col-6 sf-filter-col-price">
+            <input class="form-control" name="maxPrice" value="@maxPrice" placeholder="Giá đến" type="number" />
         </div>
-        <div class="col-auto">
-            <button class="btn btn-sm btn-danger sf-pill" type="submit"><i class="bi bi-funnel me-1"></i>Lọc</button>
-            <a class="btn btn-sm btn-outline-secondary sf-pill" asp-action="Index">Xoá</a>
+        <div class="col-12 col-sm-auto sf-filter-col-actions">
+            <div class="d-flex gap-2">
+                <button class="btn-filter btn-danger" type="submit"><i class="bi bi-funnel"></i>Lọc</button>
+                <a class="btn-filter btn-outline" asp-action="Index"><i class="bi bi-x-lg"></i>Xoá</a>
+            </div>
         </div>
     </div>
 </form>
@@ -174,19 +215,19 @@
 
                 @if (ViewBag.ActivePromotions is List<Promotion> promos)
                 {
-                    var productPromos = promos.Where(pm => pm.PromotionProducts == null || pm.PromotionProducts.Count == 0 || pm.PromotionProducts.Any(pp => pp.ProductId == p.Id)).ToList();
+                    var productPromos = promos.Where(pm => pm.PromotionProducts != null && pm.PromotionProducts.Any(pp => pp.ProductId == p.Id)).ToList();
                     foreach (var pm in productPromos.Take(1))
                     {
                         <div class="mt-1">
                             @if (pm.DiscountType == "Percentage")
                             {
-                                <span class="badge bg-danger">-@pm.DiscountValue%</span>
+                                <span class="product-promo-badge">-@pm.DiscountValue%</span>
                             }
                             else
                             {
-                                <span class="badge bg-danger">-@pm.DiscountValue.ToString("N0")₫</span>
+                                <span class="product-promo-badge">-@pm.DiscountValue.ToString("N0")₫</span>
                             }
-                            <small class="text-danger fw-semibold">@pm.Code</small>
+                            <span class="product-promo-code">@pm.Code</span>
                         </div>
                     }
                 }
@@ -232,8 +273,55 @@
     </nav>
 }
 
+@if (recentArticles.Count > 0)
+{
+    <div class="mt-5 pt-3 border-top">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <h4 class="fw-bold mb-0"><i class="bi bi-newspaper me-2 text-danger"></i>Bài viết mới nhất</h4>
+            <a asp-area="Customer" asp-controller="News" asp-action="Index" class="btn btn-outline-danger btn-sm sf-pill">
+                Xem tất cả <i class="bi bi-arrow-right ms-1"></i>
+            </a>
+        </div>
+        <div class="row g-3">
+            @foreach (var a in recentArticles)
+            {
+                <div class="col-12 col-sm-6 col-lg-3">
+                    <div class="card h-100 border-0 shadow-sm news-card">
+                        <a asp-area="Customer" asp-controller="News" asp-action="Detail" asp-route-id="@a.Id" asp-route-slug="@a.Slug">
+                            @if (!string.IsNullOrWhiteSpace(a.ImagePath))
+                            {
+                                <img src="@a.ImagePath" alt="@a.Title" class="card-img-top" style="height:160px;" />
+                            }
+                            else
+                            {
+                                <div class="card-img-top news-thumb-placeholder" style="height:160px;">
+                                    <i class="bi bi-image"></i>
+                                </div>
+                            }
+                        </a>
+                        <div class="card-body p-3">
+                            <a asp-area="Customer" asp-controller="News" asp-action="Detail" asp-route-id="@a.Id" asp-route-slug="@a.Slug"
+                               class="fw-bold text-dark text-decoration-none" style="font-size:14px;line-height:1.3;">
+                                @a.Title
+                            </a>
+                            <div class="small text-muted mt-2">
+                                <i class="bi bi-calendar3 me-1"></i>@a.CreatedAt.ToString("dd/MM/yyyy")
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
 @section Scripts {
 <script>
+    var bannerCarousel = document.getElementById('bannerCarousel');
+    if (bannerCarousel) {
+        new bootstrap.Carousel(bannerCarousel, { interval: 4000, ride: 'carousel', pause: false });
+    }
+
     document.querySelectorAll('.wishlist-btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();

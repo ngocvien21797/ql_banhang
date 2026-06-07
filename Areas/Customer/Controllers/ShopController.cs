@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using QuanLyBanHang.Data;
 using QuanLyBanHang.Helpers;
+using QuanLyBanHang.Hubs;
 using QuanLyBanHang.Models;
 using QuanLyBanHang.ViewModels;
 using System.Security.Claims;
@@ -12,11 +14,16 @@ namespace QuanLyBanHang.Areas.Customer.Controllers;
 public class ShopController : Controller
 {
     private readonly SalesDbContext _db;
+    private readonly IHttpContextAccessor _httpAccessor;
     private readonly IWebHostEnvironment _env;
-    public ShopController(SalesDbContext db, IWebHostEnvironment env)
+    private readonly IHubContext<OrderHub> _hubContext;
+
+    public ShopController(SalesDbContext db, IHttpContextAccessor httpAccessor, IWebHostEnvironment env, IHubContext<OrderHub> hubContext)
     {
         _db = db;
+        _httpAccessor = httpAccessor;
         _env = env;
+        _hubContext = hubContext;
     }
 
     [AllowAnonymous]
@@ -92,6 +99,17 @@ public class ShopController : Controller
         }
         ViewBag.WishlistIds = wishlistIds;
 
+        ViewBag.Banners = await _db.Banners
+            .Where(b => b.IsActive)
+            .OrderBy(b => b.SortOrder)
+            .ToListAsync();
+
+        ViewBag.RecentArticles = await _db.Articles
+            .Where(a => a.IsActive)
+            .OrderByDescending(a => a.CreatedAt)
+            .Take(4)
+            .ToListAsync();
+
         return View(products);
     }
 
@@ -131,11 +149,6 @@ public class ShopController : Controller
         ViewBag.IsWishlisted = customerId.HasValue && await _db.Wishlists
             .AnyAsync(w => w.CustomerId == customerId && w.ProductId == id);
 
-        ViewBag.CanReview = customerId.HasValue && await _db.SalesInvoices
-            .AnyAsync(inv => inv.CustomerId == customerId
-                && inv.Status == "Completed"
-                && inv.Items.Any(i => i.ProductId == id));
-
         return View(p);
     }
 
@@ -147,6 +160,7 @@ public class ShopController : Controller
 
         var list = await _db.SalesInvoices
             .Where(x => x.CustomerId == customerId)
+            .Include(x => x.Items).ThenInclude(i => i.Product)
             .OrderByDescending(x => x.Id)
             .ToListAsync();
 
@@ -296,7 +310,7 @@ public class ShopController : Controller
         using var tx = await _db.Database.BeginTransactionAsync();
         try
         {
-            inv.Status = "Cancelled";
+                inv.Status = "Cancelled";
 
             foreach (var item in inv.Items)
             {
@@ -305,6 +319,16 @@ public class ShopController : Controller
                 {
                     product.Stock += item.Quantity;
                 }
+
+                _db.StockLedgers.Add(new StockLedger
+                {
+                    ProductId = item.ProductId,
+                    Type = "IN",
+                    Quantity = item.Quantity,
+                    RefType = "SALE_CANCEL",
+                    RefId = inv.Id,
+                    OccurredAt = DateTime.Now
+                });
             }
 
             await _db.SaveChangesAsync();
@@ -354,6 +378,8 @@ public class ShopController : Controller
         inv.PaidAt = DateTime.Now;
         await _db.SaveChangesAsync();
 
+        await _hubContext.Clients.All.SendAsync("OrderStatusChanged", inv.Id, "Completed");
+
         _db.Notifications.Add(new Notification
         {
             CustomerId = customerId.Value,
@@ -364,7 +390,8 @@ public class ShopController : Controller
         });
         await _db.SaveChangesAsync();
 
-        TempData["Ok"] = "Xác nhận nhận hàng thành công! Bạn có thể đánh giá sản phẩm ngay bây giờ.";
+        TempData["Ok"] = "Xác nhận nhận hàng thành công!";
+        TempData["ShowReview"] = "1";
         return RedirectToAction(nameof(Details), new { id });
     }
 

@@ -30,7 +30,6 @@ else
         {
             var statusColor = x.Status switch { "Completed" => "success", "Cancelled" => "danger", "Shipped" => "primary", "Confirmed" => "info", _ => "secondary" };
             var payColor = x.PaymentStatus == "Paid" ? "success" : x.PaymentStatus == "Pending" ? "warning" : "secondary";
-            var firstItem = x.Items.FirstOrDefault();
 
             <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
                 <div class="card-body p-0">
@@ -44,46 +43,48 @@ else
                     </div>
 
                     <div class="p-3">
-                        @if (firstItem?.Product != null)
-                        {
-                            <div class="d-flex align-items-center gap-3 mb-3">
-                                <div class="bg-light rounded flex-shrink-0 d-flex align-items-center justify-content-center overflow-hidden" style="width:52px;height:52px;">
-                                    @if (!string.IsNullOrWhiteSpace(firstItem.Product.ImagePath))
+                        @{
+                            var firstItem = x.Items.FirstOrDefault();
+                        }
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div class="bg-light rounded flex-shrink-0 d-flex align-items-center justify-content-center overflow-hidden" style="width:52px;height:52px;">
+                                @if (firstItem?.Product != null && !string.IsNullOrWhiteSpace(firstItem.Product.ImagePath))
+                                {
+                                    <img src="@firstItem.Product.ImagePath" alt="" style="width:52px;height:52px;object-fit:cover;" />
+                                }
+                                else
+                                {
+                                    <i class="bi bi-box text-muted fs-4"></i>
+                                }
+                            </div>
+                            <div class="flex-grow-1" style="min-width:0;">
+                                <div class="fw-semibold text-truncate">
+                                    @if (x.Items.Count > 1)
                                     {
-                                        <img src="@firstItem.Product.ImagePath" alt="" style="width:52px;height:52px;object-fit:cover;" />
+                                        @(firstItem?.Product?.Name ?? $"#{firstItem?.ProductId}") <span class="text-muted fw-normal">và @(x.Items.Count - 1) sản phẩm khác</span>
+                                    }
+                                    else if (firstItem?.Product != null)
+                                    {
+                                        @firstItem.Product.Name
                                     }
                                     else
                                     {
-                                        <i class="bi bi-box text-muted fs-4"></i>
+                                        <span class="text-muted">@x.Items.Count sản phẩm</span>
                                     }
                                 </div>
-                                <div class="flex-grow-1 minw-0">
-                                    <div class="fw-semibold text-truncate">@firstItem.Product.Name</div>
-                                    <div class="text-muted small">
-                                        @if (x.Items.Count > 1)
-                                        {
-                                            <span>@firstItem.Quantity x @string.Format("{0:N0}", firstItem.UnitPrice) đ</span>
-                                            <span class="mx-1">·</span>
-                                            <span>+@(x.Items.Count - 1) sản phẩm khác</span>
-                                        }
-                                        else
-                                        {
-                                            <span>@firstItem.Quantity x @string.Format("{0:N0}", firstItem.UnitPrice) đ</span>
-                                        }
-                                    </div>
-                                </div>
-                                <div class="text-end flex-shrink-0">
-                                    <div class="fw-bold text-danger">@string.Format("{0:N0}", x.Total) đ</div>
+                                <div class="text-muted small">
+                                    @if (firstItem != null)
+                                    {
+                                        <span>Số lượng: @x.Items.Sum(i => i.Quantity)</span>
+                                        <span class="mx-1">·</span>
+                                        <span>@string.Format("{0:N0}", x.Total) đ</span>
+                                    }
                                 </div>
                             </div>
-                        }
-                        else
-                        {
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <span class="fw-semibold">@x.Items.Count sản phẩm</span>
-                                <span class="fw-bold text-danger">@string.Format("{0:N0}", x.Total) đ</span>
+                            <div class="text-end flex-shrink-0">
+                                <div class="fw-bold text-danger">@string.Format("{0:N0}", x.Total) đ</div>
                             </div>
-                        }
+                        </div>
 
                         <div class="d-flex flex-wrap gap-2 small text-muted mb-2">
                             <span><i class="bi bi-person me-1"></i>@x.ReceiverName</span>
