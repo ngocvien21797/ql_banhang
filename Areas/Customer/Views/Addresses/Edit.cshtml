@@ -1,0 +1,60 @@
+@model QuanLyBanHang.Models.CustomerAddress
+@{
+    ViewData["Title"] = "Sửa địa chỉ";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm" style="border-radius:12px;">
+            <div class="card-body p-4">
+                <h5 class="fw-bold mb-4"><i class="bi bi-pencil me-2 text-danger"></i>Sửa địa chỉ</h5>
+
+                <form method="post">
+                    <input type="hidden" asp-for="IsDefault" />
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium small">Họ tên người nhận <span class="text-danger">*</span></label>
+                            <input class="form-control" asp-for="ReceiverName" required />
+                            <span class="text-danger" asp-validation-for="ReceiverName"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium small">SĐT <span class="text-danger">*</span></label>
+                            <input class="form-control" asp-for="Phone" required type="tel" />
+                            <span class="text-danger" asp-validation-for="Phone"></span>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium small">Tỉnh / Thành</label>
+                            <input class="form-control" asp-for="Province" placeholder="VD: Hồ Chí Minh" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium small">Quận / Huyện</label>
+                            <input class="form-control" asp-for="District" placeholder="VD: Quận 1" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium small">Phường / Xã</label>
+                            <input class="form-control" asp-for="Ward" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium small">Ghi chú (VD: Nhà riêng)</label>
+                            <input class="form-control" asp-for="Label" placeholder="VD: Nhà riêng, Cơ quan" />
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-medium small">Địa chỉ chi tiết <span class="text-danger">*</span></label>
+                            <input class="form-control" asp-for="Address" placeholder="Số nhà, tên đường" required />
+                            <span class="text-danger" asp-validation-for="Address"></span>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 d-flex gap-2">
+                        <a class="btn btn-outline-secondary sf-pill" asp-action="Index"><i class="bi bi-x-lg me-1"></i>Hủy</a>
+                        <button class="btn btn-danger sf-pill"><i class="bi bi-check-lg me-1"></i>Lưu</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

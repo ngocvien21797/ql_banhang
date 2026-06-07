@@ -1,32 +1,64 @@
 @model QuanLyBanHang.Models.Promotion
 @{ ViewData["Title"] = "Xóa chương trình khuyến mãi"; }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/admin-promotions.css" asp-append-version="true" />
+}
+
 <div class="page-header">
     <div>
         <h3><i class="bi bi-trash"></i> @ViewData["Title"]</h3>
     </div>
 </div>
 
-<div class="form-card">
-    <div class="card-header"><h5>Xác nhận xóa</h5></div>
-    <div class="card-body">
-        <div class="alert alert-danger d-flex align-items-center gap-3 mb-0">
+<div class="promo-section">
+    <div class="promo-section-title text-danger">
+        <i class="bi bi-exclamation-triangle"></i> Xác nhận xóa
+    </div>
+    <div class="promo-section-body">
+        <div class="alert alert-danger d-flex align-items-center gap-3">
             <i class="bi bi-exclamation-triangle fs-4"></i>
             <div><strong>Cảnh báo!</strong> Bạn có chắc chắn muốn xóa <strong>@Model.Name</strong>?</div>
         </div>
-        <dl class="row mt-3 mb-0">
-            <dt class="col-sm-3">Tên</dt>
-            <dd class="col-sm-9">@Model.Name</dd>
-            <dt class="col-sm-3">Mã KM</dt>
-            <dd class="col-sm-9"><code>@Model.Code</code></dd>
-            <dt class="col-sm-3">Giảm</dt>
-            <dd class="col-sm-9">@(Model.DiscountType == "Percentage" ? $"{Model.DiscountValue}%" : Model.DiscountValue.ToString("N0") + "₫")</dd>
-            <dt class="col-sm-3">Hiệu lực</dt>
-            <dd class="col-sm-9">@Model.StartDate.ToString("dd/MM/yyyy") → @Model.EndDate.ToString("dd/MM/yyyy")</dd>
+        <div class="promo-stats">
+            <div class="promo-stat-item">
+                <i class="bi bi-tag"></i>
+                <div>
+                    <small>Mã KM</small>
+                    <strong><code>@Model.Code</code></strong>
+                </div>
+            </div>
+            <div class="promo-stat-item">
+                <i class="bi bi-percent"></i>
+                <div>
+                    <small>Giảm</small>
+                    <strong>@(Model.DiscountType == "Percentage" ? $"{Model.DiscountValue}%" : Model.DiscountValue.ToString("N0") + "₫")</strong>
+                </div>
+            </div>
+            <div class="promo-stat-item">
+                <i class="bi bi-calendar"></i>
+                <div>
+                    <small>Hiệu lực</small>
+                    <strong>@Model.StartDate.ToString("dd/MM/yyyy") → @Model.EndDate.ToString("dd/MM/yyyy")</strong>
+                </div>
+            </div>
+            <div class="promo-stat-item">
+                <i class="bi bi-graph-up"></i>
+                <div>
+                    <small>Đã sử dụng</small>
+                    <strong>@Model.UsageCount lượt</strong>
+                </div>
+            </div>
+        </div>
+        <dl class="row mb-0 mt-3">
+            <dt class="col-sm-4">Tổng lượt tối đa</dt>
+            <dd class="col-sm-8">@(Model.MaxUsageCount.HasValue ? Model.MaxUsageCount.Value.ToString("N0") : "Không giới hạn")</dd>
+            <dt class="col-sm-4">Lượt/Khách hàng</dt>
+            <dd class="col-sm-8">@(Model.MaxUsagePerCustomer.HasValue ? Model.MaxUsagePerCustomer.Value.ToString("N0") : "Không giới hạn")</dd>
         </dl>
     </div>
     <form method="post">
-        <div class="card-footer">
+        <div class="promo-section-footer">
             <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i> Hủy</a>
             <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Xác nhận xóa</button>
         </div>

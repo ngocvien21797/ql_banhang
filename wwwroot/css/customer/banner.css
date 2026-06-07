@@ -1,0 +1,28 @@
+/* ===== Banner Carousel ===== */
+#bannerCarousel {
+  background: #f0f0f0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+#bannerCarousel .carousel-item img {
+  transition: transform .3s ease;
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: contain;
+  background: #f0f0f0;
+}
+#bannerCarousel:hover .carousel-item img {
+  transform: scale(1.02);
+}
+
+@media (max-width: 992px) {
+  #bannerCarousel .carousel-item img {
+    max-height: 300px;
+  }
+}
+@media (max-width: 576px) {
+  #bannerCarousel .carousel-item img {
+    max-height: 200px !important;
+  }
+}

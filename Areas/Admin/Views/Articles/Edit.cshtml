@@ -1,0 +1,69 @@
+@model QuanLyBanHang.Models.Article
+
+@{ ViewData["Title"] = "Sửa bài viết"; }
+
+<div class="page-header">
+    <div>
+        <h3><i class="bi bi-pencil-square"></i> @ViewData["Title"]</h3>
+        <p>Cập nhật thông tin bài viết</p>
+    </div>
+</div>
+
+<div class="form-card">
+    <div class="card-header">
+        <h5>Thông tin bài viết</h5>
+    </div>
+    <form method="post" enctype="multipart/form-data">
+        <input asp-for="Id" type="hidden" />
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label asp-for="Title" class="form-label"></label>
+                    <input asp-for="Title" class="form-control" placeholder="Nhập tiêu đề..." />
+                    <span asp-validation-for="Title" class="text-danger small"></span>
+                </div>
+                <div class="col-md-4">
+                    <label asp-for="Slug" class="form-label"></label>
+                    <input asp-for="Slug" class="form-control" placeholder="Để trống tự tạo..." />
+                    <span asp-validation-for="Slug" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label asp-for="Summary" class="form-label">Tóm tắt</label>
+                    <textarea asp-for="Summary" class="form-control" rows="3" placeholder="Tóm tắt nội dung..."></textarea>
+                    <span asp-validation-for="Summary" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Hình ảnh</label>
+                    <input class="form-control" type="file" name="imageFile" accept="image/*" />
+                    <div class="form-text small text-muted">Chấp nhận JPG, JPEG, PNG, WEBP (tối đa 5MB).</div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.ImagePath))
+                {
+                    <div class="col-12">
+                        <label class="form-label">Ảnh hiện tại</label>
+                        <div>
+                            <img src="@Model.ImagePath" alt="@Model.Title" style="max-height:120px;border-radius:8px;border:1px solid var(--border);" />
+                        </div>
+                    </div>
+                }
+                <div class="col-12">
+                    <label asp-for="Content" class="form-label">Nội dung</label>
+                    <textarea asp-for="Content" class="form-control" rows="12" placeholder="Viết nội dung bài viết..."></textarea>
+                    <span asp-validation-for="Content" class="text-danger small"></span>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check form-switch">
+                        <input asp-for="IsActive" class="form-check-input" />
+                        <label asp-for="IsActive" class="form-check-label">Kích hoạt</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i> Hủy</a>
+            <button type="submit" class="btn btn-dark"><i class="bi bi-check-lg me-1"></i> Lưu</button>
+        </div>
+    </form>
+</div>
+
+@section Scripts { <partial name="_ValidationScriptsPartial" /> }

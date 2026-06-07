@@ -32,13 +32,12 @@ public class PaymentController : Controller
             return RedirectToAction("Details", "Shop", new { id });
         }
 
-        // Build mock QR data
-        var qrContent = inv.PaymentMethod == "BANK"
-            ? $"BANK|{inv.Code}|{inv.Total:N0}VND|STK:123456789|NCB BANK - NGUYEN VAN A"
-            : $"WALLET|{inv.Code}|{inv.Total:N0}VND|Vi dien tu";
-
-        ViewBag.QR = $"https://api.qrserver.com/v1/create-qr-code/?size=250x250&data={Uri.EscapeDataString(qrContent)}";
-        ViewBag.QRContent = qrContent;
+        // Build VietQR code with amount
+        var addInfo = $"TT {inv.Code}";
+        var accountName = "To Ngoc Vien";
+        var amount = ((long)inv.Total).ToString();
+        ViewBag.QR = $"https://api.vietqr.io/image/970422-0364921797-print.jpg?amount={amount}&addInfo={Uri.EscapeDataString(addInfo)}&accountName={Uri.EscapeDataString(accountName)}";
+        ViewBag.QRContent = $"MB Bank - 0364921797 - TO NGOC VIEN - {amount}VND - {addInfo}";
 
         return View(inv);
     }
@@ -62,8 +61,8 @@ public class PaymentController : Controller
         {
             inv.PaymentStatus = "Paid";
             inv.PaidAt = DateTime.Now;
-            inv.PaymentProvider = "NCB_BANK";
-            inv.PaymentRef = $"BANK-{DateTime.Now:yyyyMMddHHmmss}-{inv.Id}";
+            inv.PaymentProvider = "MB_BANK";
+            inv.PaymentRef = $"MB-{DateTime.Now:yyyyMMddHHmmss}-{inv.Id}";
             await _db.SaveChangesAsync();
 
             await CreateNotificationAsync(inv.CustomerId, $"Thanh toán {inv.Code}", $"Đơn hàng {inv.Code} đã thanh toán qua chuyển khoản.", $"/Shop/Details/{inv.Id}");

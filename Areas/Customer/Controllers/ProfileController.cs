@@ -12,20 +12,26 @@ namespace QuanLyBanHang.Areas.Customer.Controllers;
 public class ProfileController : Controller
 {
     private readonly SalesDbContext _db;
-    public ProfileController(SalesDbContext db) => _db = db;
+    private readonly IWebHostEnvironment _env;
+    public ProfileController(SalesDbContext db, IWebHostEnvironment env)
+    {
+        _db = db;
+        _env = env;
+    }
 
     [HttpGet]
     public async Task<IActionResult> Index()
     {
         var uid = GetUserId();
-        var customer = await _db.Users.Where(u => u.Id == uid).Select(u => u.Customer).FirstOrDefaultAsync();
-        if (customer == null) return NotFound();
+        var user = await _db.Users.Include(u => u.Customer).FirstOrDefaultAsync(u => u.Id == uid);
+        if (user?.Customer == null) return NotFound();
 
-        return View(customer);
+        ViewBag.Email = user.Username;
+        return View(user.Customer);
     }
 
     [HttpPost]
-    public async Task<IActionResult> Index(CustomerEntity model)
+    public async Task<IActionResult> Index(CustomerEntity model, IFormFile? avatarFile)
     {
         var uid = GetUserId();
         var customerId = await _db.Users.Where(u => u.Id == uid).Select(u => u.CustomerId).FirstOrDefaultAsync();
@@ -36,7 +42,22 @@ public class ProfileController : Controller
 
         customer.Name = model.Name?.Trim() ?? customer.Name;
         customer.Phone = string.IsNullOrWhiteSpace(model.Phone) ? null : model.Phone.Trim();
+        customer.Email = string.IsNullOrWhiteSpace(model.Email) ? null : model.Email.Trim();
         customer.Address = string.IsNullOrWhiteSpace(model.Address) ? null : model.Address.Trim();
+        customer.DateOfBirth = model.DateOfBirth;
+        customer.Gender = string.IsNullOrWhiteSpace(model.Gender) ? null : model.Gender;
+
+        if (avatarFile != null && avatarFile.Length > 0)
+        {
+            var saveResult = await SaveAvatarAsync(avatarFile);
+            if (!saveResult.Success)
+            {
+                TempData["Error"] = saveResult.ErrorMessage ?? "Upload ảnh thất bại.";
+                return RedirectToAction(nameof(Index));
+            }
+            DeleteImageIfExists(customer.AvatarPath);
+            customer.AvatarPath = saveResult.RelativePath;
+        }
 
         await _db.SaveChangesAsync();
         TempData["Ok"] = "Cập nhật thông tin thành công!";
@@ -67,6 +88,43 @@ public class ProfileController : Controller
 
         TempData["Ok"] = "Đổi mật khẩu thành công!";
         return RedirectToAction(nameof(Index));
+    }
+
+    private async Task<(bool Success, string? RelativePath, string? ErrorMessage)> SaveAvatarAsync(IFormFile file)
+    {
+        const long maxBytes = 5 * 1024 * 1024;
+        if (file.Length > maxBytes)
+            return (false, null, "Ảnh quá lớn (tối đa 5MB).");
+
+        var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+        var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+        if (!allowed.Contains(ext))
+            return (false, null, "Chỉ cho phép JPG/JPEG/PNG/WEBP.");
+
+        var dir = Path.Combine(_env.WebRootPath, "uploads", "avatars");
+        Directory.CreateDirectory(dir);
+
+        var fileName = $"{Guid.NewGuid():N}{ext}";
+        var physicalPath = Path.Combine(dir, fileName);
+
+        using (var stream = new FileStream(physicalPath, FileMode.Create))
+        {
+            await file.CopyToAsync(stream);
+        }
+
+        var relative = $"/uploads/avatars/{fileName}";
+        return (true, relative, null);
+    }
+
+    private void DeleteImageIfExists(string? imagePath)
+    {
+        if (string.IsNullOrWhiteSpace(imagePath)) return;
+        var rel = imagePath.TrimStart('/');
+        var full = Path.GetFullPath(Path.Combine(_env.WebRootPath, rel));
+        var root = Path.GetFullPath(_env.WebRootPath);
+        if (!full.StartsWith(root, StringComparison.OrdinalIgnoreCase)) return;
+        if (System.IO.File.Exists(full))
+            System.IO.File.Delete(full);
     }
 
     private long GetUserId()

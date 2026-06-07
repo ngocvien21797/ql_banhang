@@ -1,0 +1,174 @@
+@{
+    ViewData["Title"] = "Tạo đơn hàng";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/sales-create.css" asp-append-version="true" />
+}
+
+<div class="page-header">
+    <div>
+        <h3><i class="bi bi-plus-circle me-2"></i>Tạo đơn hàng</h3>
+        <p>Nhập thông tin đơn hàng bán cho khách</p>
+    </div>
+</div>
+
+<form method="post" class="sc-wrap" id="orderForm">
+    <!-- Thông tin khách hàng & nhận hàng -->
+    <div class="sc-info mb-3">
+        <div class="sc-header"><h5 class="mb-0"><i class="bi bi-person me-2"></i>Khách hàng &amp; Nhận hàng</h5></div>
+        <div class="sc-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label">Khách hàng <span class="text-muted">(tuỳ chọn)</span></label>
+                    <select class="form-select" name="customerId" asp-items="ViewBag.Customers">
+                        <option value="">-- Khách lẻ --</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Phương thức thanh toán</label>
+                    <select class="form-select" name="paymentMethod">
+                        <option value="COD">COD</option>
+                        <option value="BANK">Chuyển khoản</option>
+                        <option value="WALLET">Ví điện tử</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Người nhận <span class="text-danger">*</span></label>
+                    <input class="form-control" name="receiverName" value="" required placeholder="VD: Nguyễn Văn A" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">SĐT nhận</label>
+                    <input class="form-control" name="shippingPhone" value="" placeholder="VD: 0901234567" />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Địa chỉ</label>
+                    <input class="form-control" name="shippingAddress" value="" placeholder="VD: 123 Đường ABC, Quận 1" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Ghi chú</label>
+                    <textarea class="form-control" name="note" placeholder="Ghi chú đơn hàng..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sản phẩm -->
+    <div class="sc-products mb-3">
+        <div class="sc-header">
+            <h5 class="mb-0"><i class="bi bi-box me-2"></i>Sản phẩm</h5>
+            <button class="btn btn-outline-secondary btn-sm" type="button" id="btnAddRow"><i class="bi bi-plus-lg me-1"></i>Thêm dòng</button>
+        </div>
+        <div class="sc-body">
+            <div class="table-responsive">
+                <table class="table align-middle mb-0" id="itemsTable">
+                    <thead>
+                        <tr>
+                            <th style="min-width:250px;">Sản phẩm</th>
+                            <th style="width:120px;">Đơn giá</th>
+                            <th style="width:100px;">Số lượng</th>
+                            <th style="width:140px;">Thành tiền</th>
+                            <th style="width:40px;"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="itemsBody">
+                        <tr class="sc-product-row">
+                            <td>
+                                <select class="form-select" name="productIds" asp-items="ViewBag.Products" onchange="onProductChange(this)"></select>
+                            </td>
+                            <td>
+                                <input class="form-control text-end" type="number" name="unitPrices" value="0" min="0" step="1000" oninput="onPriceChange(this)" />
+                            </td>
+                            <td>
+                                <input class="form-control text-end" type="number" name="qtys" value="1" min="1" oninput="onQtyChange(this)" />
+                            </td>
+                            <td class="sc-line-total">0 đ</td>
+                            <td>
+                                <button class="sc-remove-btn" type="button" onclick="removeRow(this)" title="Xoá"><i class="bi bi-x"></i></button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="text-start px-3 pb-3 pt-2">
+                <button class="sc-add-btn" type="button" id="btnAddRow2"><i class="bi bi-plus"></i>Thêm sản phẩm</button>
+            </div>
+        </div>
+        <div class="sc-total-row">
+            <span class="sc-total-label">Tổng cộng:</span>
+            <span class="sc-total-value" id="grandTotal">0 đ</span>
+        </div>
+        <div class="sc-actions">
+            <button class="btn btn-dark"><i class="bi bi-check-lg me-1"></i>Lưu đơn hàng</button>
+            <a class="btn btn-outline-secondary" asp-action="Index"><i class="bi bi-x-lg me-1"></i>Hủy</a>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+<script>
+  // Lưu HTML của option để clone
+  var productOptionsHtml = '';
+
+  function getTemplateRow() {
+    var selectHtml = productOptionsHtml ||
+      document.querySelector('select[name="productIds"]').innerHTML;
+    return '<tr class="sc-product-row">' +
+      '<td><select class="form-select" name="productIds" onchange="onProductChange(this)">' + selectHtml + '</select></td>' +
+      '<td><input class="form-control text-end" type="number" name="unitPrices" value="0" min="0" step="1000" oninput="onPriceChange(this)" /></td>' +
+      '<td><input class="form-control text-end" type="number" name="qtys" value="1" min="1" oninput="onQtyChange(this)" /></td>' +
+      '<td class="sc-line-total">0 đ</td>' +
+      '<td><button class="sc-remove-btn" type="button" onclick="removeRow(this)" title="Xo\u00e1"><i class="bi bi-x"></i></button></td>' +
+      '</tr>';
+  }
+
+  function recalc() {
+    var rows = document.querySelectorAll('#itemsBody tr');
+    var grand = 0;
+    rows.forEach(function (row) {
+      var price = parseFloat(row.querySelector('input[name="unitPrices"]').value) || 0;
+      var qty = parseInt(row.querySelector('input[name="qtys"]').value) || 0;
+      var lineTotal = price * qty;
+      row.querySelector('.sc-line-total').textContent = lineTotal.toLocaleString('vi-VN') + ' \u0111';
+      grand += lineTotal;
+    });
+    var el = document.getElementById('grandTotal');
+    el.textContent = grand.toLocaleString('vi-VN') + ' \u0111';
+    el.classList.remove('pulse');
+    void el.offsetWidth;
+    el.classList.add('pulse');
+  }
+
+  function onProductChange(sel) {
+    // auto-fill price from data attribute or keep manual
+    // The product list doesn't have price in option, so the admin must enter manually
+    recalc();
+  }
+
+  function onPriceChange(inp) { recalc(); }
+  function onQtyChange(inp) { recalc(); }
+
+  function removeRow(btn) {
+    var tbody = document.getElementById('itemsBody');
+    if (tbody.children.length <= 1) return;
+    btn.closest('tr').remove();
+    recalc();
+  }
+
+  function addRow() {
+    var tbody = document.getElementById('itemsBody');
+    tbody.insertAdjacentHTML('beforeend', getTemplateRow());
+    recalc();
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    // Save options HTML on first load
+    productOptionsHtml = document.querySelector('select[name="productIds"]').innerHTML;
+
+    document.getElementById('btnAddRow').addEventListener('click', addRow);
+    document.getElementById('btnAddRow2').addEventListener('click', addRow);
+
+    recalc();
+  });
+</script>
+}

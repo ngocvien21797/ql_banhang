@@ -4,6 +4,10 @@
     var pagination = ViewBag.Pagination as QuanLyBanHang.ViewModels.PaginationModel;
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/admin-promotions.css" asp-append-version="true" />
+}
+
 <div class="page-header">
     <div>
         <h3><i class="bi bi-percent"></i> Khuyến mãi</h3>
@@ -55,6 +59,7 @@
                         <th>Loại</th>
                         <th class="text-end">Giá trị</th>
                         <th>Hiệu lực</th>
+                        <th class="text-center">Sử dụng</th>
                         <th class="text-center">Trạng thái</th>
                         <th class="text-end" style="width:200px">Thao tác</th>
                     </tr>
@@ -65,9 +70,26 @@
                         <tr>
                             <td class="fw-semibold">@item.Name</td>
                             <td><code>@item.Code</code></td>
-                            <td><span class="badge bg-info">@(item.DiscountType == "Percentage" ? "% Giảm" : "Giảm tiền")</span></td>
-                            <td class="text-end">@(item.DiscountType == "Percentage" ? $"{item.DiscountValue}%" : item.DiscountValue.ToString("N0"))</td>
+                            <td><span class="usage-badge badge-type">@(item.DiscountType == "Percentage" ? "% Giảm" : "Giảm tiền")</span></td>
+                            <td class="text-end fw-semibold">@(item.DiscountType == "Percentage" ? $"{item.DiscountValue}%" : item.DiscountValue.ToString("N0"))</td>
                             <td><small class="text-muted">@item.StartDate.ToString("dd/MM") - @item.EndDate.ToString("dd/MM/yyyy")</small></td>
+                            <td class="text-center">
+                                @if (item.MaxUsageCount.HasValue)
+                                {
+                                    var pct = item.MaxUsageCount.Value > 0 ? (int)((double)item.UsageCount / item.MaxUsageCount.Value * 100) : 0;
+                                    <div data-bs-toggle="tooltip" title="@item.UsageCount / @item.MaxUsageCount lượt">
+                                        <span class="fw-semibold @(pct >= 100 ? "text-danger" : pct >= 80 ? "text-warning" : "")">@item.UsageCount</span>
+                                        <small class="text-muted">/@item.MaxUsageCount</small>
+                                        <div class="usage-progress-bar">
+                                            <div class="usage-progress-fill @(pct >= 100 ? "bg-danger" : pct >= 80 ? "bg-warning" : "bg-success")" style="width:@(Math.Min(pct, 100))%"></div>
+                                        </div>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">@item.UsageCount lượt</span>
+                                }
+                            </td>
                             <td class="text-center">
                                 @if (item.IsActive && item.EndDate >= DateTime.Now)
                                 {
@@ -92,7 +114,7 @@
                     }
                     @if (!Model.Any())
                     {
-                        <tr><td colspan="7" class="text-center text-muted py-4">Chưa có chương trình khuyến mãi nào</td></tr>
+                        <tr><td colspan="8" class="text-center text-muted py-4">Chưa có chương trình khuyến mãi nào</td></tr>
                     }
                 </tbody>
             </table>
@@ -106,3 +128,12 @@
         </div>
     }
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
+        });
+    </script>
+}

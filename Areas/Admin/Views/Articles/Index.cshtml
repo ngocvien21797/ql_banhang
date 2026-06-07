@@ -1,0 +1,101 @@
+@model IEnumerable<QuanLyBanHang.Models.Article>
+
+@{
+    ViewData["Title"] = "Bài viết";
+    var pagination = ViewBag.Pagination as QuanLyBanHang.ViewModels.PaginationModel;
+    var count = Model.Count();
+}
+
+<div class="page-header">
+    <div>
+        <h3><i class="bi bi-newspaper"></i> Bài viết</h3>
+        <p>Quản lý tin tức, bài viết</p>
+    </div>
+    <div class="page-actions">
+        <a asp-action="Create" class="btn btn-dark"><i class="bi bi-plus-lg"></i> Thêm bài viết</a>
+    </div>
+</div>
+
+<form method="get" class="filters-bar">
+    <div class="form-group">
+        <label class="form-label">Tìm kiếm</label>
+        <input type="text" name="search" class="form-control form-control-sm" placeholder="Tìm theo tiêu đề..." value="@Context.Request.Query["search"]" style="width:200px">
+    </div>
+    <div class="form-group">
+        <label class="form-label">&nbsp;</label>
+        <button type="submit" class="btn btn-dark btn-sm"><i class="bi bi-search"></i> Lọc</button>
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg"></i> Xóa lọc</a>
+    </div>
+</form>
+
+<div class="card-modern">
+    <div class="card-head">
+        <h5>Danh sách bài viết</h5>
+        <span class="badge bg-primary">@(pagination?.TotalItems ?? 0)</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th style="width:60px">ID</th>
+                        <th style="width:160px">Hình ảnh</th>
+                        <th>Tiêu đề</th>
+                        <th class="text-center">Hiển thị</th>
+                        <th>Ngày tạo</th>
+                        <th class="text-end" style="width:280px">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@item.Id</td>
+                            <td>
+                                @if (!string.IsNullOrWhiteSpace(item.ImagePath))
+                                {
+                                    <img src="@item.ImagePath" alt="@item.Title" style="height:50px;width:80px;object-fit:cover;border-radius:6px;" />
+                                }
+                                else
+                                {
+                                    <span class="text-muted small">—</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="fw-semibold">@item.Title</div>
+                                @if (!string.IsNullOrWhiteSpace(item.Summary))
+                                {
+                                    <div class="small text-muted" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@item.Summary</div>
+                                }
+                            </td>
+                            <td class="text-center">
+                                @if (item.IsActive)
+                                {
+                                    <span class="badge bg-success">Bật</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Tắt</span>
+                                }
+                            </td>
+                            <td class="small">@item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-dark" title="Sửa"><i class="bi bi-pencil"></i></a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger" title="Xóa"><i class="bi bi-trash"></i></a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @if (pagination != null && pagination.TotalPages > 1)
+    {
+        <div class="card-head" style="border-top:1px solid var(--border);border-bottom:none">
+            <small class="text-muted">Hiển thị @count trên tổng số @pagination.TotalItems mục</small>
+            <partial name="_Pagination" model="pagination" />
+        </div>
+    }
+</div>

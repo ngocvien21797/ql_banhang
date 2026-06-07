@@ -1,6 +1,11 @@
 @model QuanLyBanHang.Models.Customer
+@using QuanLyBanHang.Helpers
 
 @{ ViewData["Title"] = "Chi tiết khách hàng"; }
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/admin-customers.css" asp-append-version="true" />
+}
 
 <div class="page-header">
     <div>
@@ -12,55 +17,65 @@
     </div>
 </div>
 
-<div class="row g-4">
+<div class="customer-detail row g-4">
     <div class="col-lg-4">
-        <div class="detail-card">
-            <div class="detail-header">
-                <h5>Thông tin cơ bản</h5>
-            </div>
-            <div class="detail-body">
-                <div class="detail-row">
-                    <div class="detail-label">ID</div>
-                    <div class="detail-value">@Model.Id</div>
+        <div class="profile-card">
+            <div class="profile-cover"></div>
+            @if (!string.IsNullOrWhiteSpace(Model.AvatarPath))
+            {
+                <img src="@Model.AvatarPath" alt="" class="profile-avatar-img" />
+            }
+            else
+            {
+                <div class="profile-avatar">@Model.Name.Substring(0, 1).ToUpper()</div>
+            }
+            <div class="profile-body">
+                <h3 class="profile-name">@Model.Name</h3>
+                <p class="profile-phone"><i class="bi bi-telephone-fill"></i> @Model.Phone</p>
+
+                <div class="info-row">
+                    <span class="info-label"><i class="bi bi-envelope me-1"></i> Email</span>
+                    <span class="info-value">@(!string.IsNullOrWhiteSpace(Model.Email) ? Model.Email : "—")</span>
                 </div>
-                <div class="detail-row">
-                    <div class="detail-label">Tên</div>
-                    <div class="detail-value">@Model.Name</div>
+                <div class="info-row">
+                    <span class="info-label"><i class="bi bi-calendar me-1"></i> Ngày sinh</span>
+                    <span class="info-value">@(Model.DateOfBirth?.ToString("dd/MM/yyyy") ?? "—")</span>
                 </div>
-                <div class="detail-row">
-                    <div class="detail-label">SĐT</div>
-                    <div class="detail-value">@Model.Phone</div>
+                <div class="info-row">
+                    <span class="info-label"><i class="bi bi-gender-ambiguous me-1"></i> Giới tính</span>
+                    <span class="info-value">@(!string.IsNullOrWhiteSpace(Model.Gender) ? Model.Gender : "—")</span>
                 </div>
-                <div class="detail-row">
-                    <div class="detail-label">Địa chỉ</div>
-                    <div class="detail-value">@Model.Address</div>
+                <div class="info-row">
+                    <span class="info-label"><i class="bi bi-geo-alt me-1"></i> Địa chỉ</span>
+                    <span class="info-value">@(!string.IsNullOrWhiteSpace(Model.Address) ? Model.Address : "—")</span>
                 </div>
-                <div class="detail-row">
-                    <div class="detail-label">Ví</div>
-                    <div class="detail-value">@string.Format("{0:N0}", Model.WalletBalance) đ</div>
+                <div class="info-row">
+                    <span class="info-label"><i class="bi bi-wallet2 me-1"></i> Số dư ví</span>
+                    <span class="info-value">@string.Format("{0:N0}", Model.WalletBalance) đ</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label"><i class="bi bi-hash me-1"></i> Mã KH</span>
+                    <span class="info-value">#@Model.Id</span>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-lg-8">
-        <div class="row g-3">
-            <div class="col-sm-4">
-                <div class="stat-card">
-                    <div class="stat-card-label">Số đơn</div>
-                    <div class="stat-card-value">@ViewBag.OrderCount</div>
-                </div>
+        <div class="stat-grid">
+            <div class="stat-box">
+                <div class="stat-icon orders"><i class="bi bi-receipt"></i></div>
+                <div class="stat-num">@ViewBag.OrderCount</div>
+                <div class="stat-label">Số đơn hàng</div>
             </div>
-            <div class="col-sm-4">
-                <div class="stat-card">
-                    <div class="stat-card-label">Đã chi</div>
-                    <div class="stat-card-value">@string.Format("{0:N0}", ViewBag.TotalSpent) đ</div>
-                </div>
+            <div class="stat-box">
+                <div class="stat-icon spent"><i class="bi bi-coin"></i></div>
+                <div class="stat-num">@string.Format("{0:N0}", ViewBag.TotalSpent) đ</div>
+                <div class="stat-label">Tổng đã chi</div>
             </div>
-            <div class="col-sm-4">
-                <div class="stat-card">
-                    <div class="stat-card-label">Mua gần nhất</div>
-                    <div class="fs-5 fw-bold">@(ViewBag.LastOrder?.ToString("dd/MM/yyyy") ?? "Chưa mua")</div>
-                </div>
+            <div class="stat-box">
+                <div class="stat-icon last"><i class="bi bi-calendar-check"></i></div>
+                <div class="stat-num">@(ViewBag.LastOrder?.ToString("dd/MM/yyyy") ?? "—")</div>
+                <div class="stat-label">Mua gần nhất</div>
             </div>
         </div>
 

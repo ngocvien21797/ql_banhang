@@ -2,6 +2,10 @@
 
 @{ ViewData["Title"] = "Xóa khách hàng"; }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/admin-customers.css" asp-append-version="true" />
+}
+
 <div class="page-header">
     <div>
         <h3><i class="bi bi-trash"></i> @ViewData["Title"]</h3>
@@ -9,31 +13,52 @@
     </div>
 </div>
 
-<div class="form-card">
-    <div class="card-header">
-        <h5>Xác nhận xóa</h5>
-    </div>
-    <div class="card-body">
-        <div class="alert alert-danger d-flex align-items-center gap-3 mb-0">
-            <i class="bi bi-exclamation-triangle fs-4"></i>
-            <div>
-                <strong>Cảnh báo!</strong> Bạn có chắc chắn muốn xóa <strong>@Model.Name</strong>? Hành động này không thể hoàn tác.
+<div class="customer-delete">
+    <div class="delete-card">
+        <div class="form-section-title" style="padding:16px 24px;border-bottom:1px solid #e8eaed;background:#fafbfc;font-size:15px;font-weight:700;display:flex;align-items:center;gap:10px;">
+            <i class="bi bi-shield-exclamation text-danger"></i> Xác nhận xóa
+        </div>
+        <div class="card-body" style="padding:24px;">
+            <div class="delete-warning">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                <div>
+                    <strong>Cảnh báo!</strong> Bạn có chắc chắn muốn xóa <strong>@Model.Name</strong>?
+                    <p>Hành động này không thể hoàn tác. Mọi dữ liệu liên quan sẽ bị xóa vĩnh viễn.</p>
+                </div>
+            </div>
+
+            <div class="info-list">
+                <div class="info-item">
+                    <span class="item-label">Mã khách hàng</span>
+                    <span class="item-value">#@Model.Id</span>
+                </div>
+                <div class="info-item">
+                    <span class="item-label">Tên</span>
+                    <span class="item-value">@Model.Name</span>
+                </div>
+                <div class="info-item">
+                    <span class="item-label">Số điện thoại</span>
+                    <span class="item-value">@Model.Phone</span>
+                </div>
+                <div class="info-item">
+                    <span class="item-label">Email</span>
+                    <span class="item-value">@(!string.IsNullOrWhiteSpace(Model.Email) ? Model.Email : "—")</span>
+                </div>
+                <div class="info-item">
+                    <span class="item-label">Giới tính</span>
+                    <span class="item-value">@(!string.IsNullOrWhiteSpace(Model.Gender) ? Model.Gender : "—")</span>
+                </div>
+                <div class="info-item">
+                    <span class="item-label">Địa chỉ</span>
+                    <span class="item-value">@Model.Address</span>
+                </div>
             </div>
         </div>
-
-        <dl class="row mt-3 mb-0">
-            <dt class="col-sm-3">ID</dt>
-            <dd class="col-sm-9">@Model.Id</dd>
-            <dt class="col-sm-3">Tên</dt>
-            <dd class="col-sm-9">@Model.Name</dd>
-            <dt class="col-sm-3">SĐT</dt>
-            <dd class="col-sm-9">@Model.Phone</dd>
-        </dl>
+        <form method="post">
+            <div class="delete-footer">
+                <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i> Hủy</a>
+                <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i> Xác nhận xóa</button>
+            </div>
+        </form>
     </div>
-    <form method="post">
-        <div class="card-footer">
-            <a asp-action="Index" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i> Hủy</a>
-            <button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Xác nhận xóa</button>
-        </div>
-    </form>
 </div>

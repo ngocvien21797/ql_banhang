@@ -12,13 +12,9 @@ public class SalesDbContext : DbContext
     public DbSet<Category> Categories => Set<Category>();
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Customer> Customers => Set<Customer>();
-    public DbSet<Supplier> Suppliers => Set<Supplier>();
 
     public DbSet<SalesInvoice> SalesInvoices => Set<SalesInvoice>();
     public DbSet<SalesItem> SalesItems => Set<SalesItem>();
-
-    public DbSet<PurchaseInvoice> PurchaseInvoices => Set<PurchaseInvoice>();
-    public DbSet<PurchaseItem> PurchaseItems => Set<PurchaseItem>();
 
     public DbSet<StockLedger> StockLedgers => Set<StockLedger>();
 
@@ -28,6 +24,10 @@ public class SalesDbContext : DbContext
     public DbSet<Wishlist> Wishlists => Set<Wishlist>();
     public DbSet<Review> Reviews => Set<Review>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<CustomerAddress> CustomerAddresses => Set<CustomerAddress>();
+    public DbSet<Banner> Banners => Set<Banner>();
+    public DbSet<Article> Articles => Set<Article>();
+    public DbSet<PromotionUsage> PromotionUsages => Set<PromotionUsage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -65,23 +65,11 @@ public class SalesDbContext : DbContext
             .Property(x => x.Discount)
             .HasPrecision(18, 2);
 
-        modelBuilder.Entity<PurchaseInvoice>()
-            .Property(x => x.Total)
-            .HasPrecision(18, 2);
-
         modelBuilder.Entity<SalesItem>()
             .Property(x => x.UnitPrice)
             .HasPrecision(18, 2);
 
         modelBuilder.Entity<SalesItem>()
-            .Property(x => x.LineTotal)
-            .HasPrecision(18, 2);
-
-        modelBuilder.Entity<PurchaseItem>()
-            .Property(x => x.UnitCost)
-            .HasPrecision(18, 2);
-
-        modelBuilder.Entity<PurchaseItem>()
             .Property(x => x.LineTotal)
             .HasPrecision(18, 2);
 
@@ -97,13 +85,7 @@ public class SalesDbContext : DbContext
             .HasForeignKey(x => x.SalesInvoiceId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        modelBuilder.Entity<PurchaseInvoice>()
-            .HasMany(x => x.Items)
-            .WithOne(x => x.Invoice)
-            .HasForeignKey(x => x.PurchaseInvoiceId)
-            .OnDelete(DeleteBehavior.Cascade);
 
-        
         modelBuilder.Entity<Customer>()
             .Property(x => x.WalletBalance)
             .HasPrecision(18, 2);
@@ -119,6 +101,12 @@ public class SalesDbContext : DbContext
         modelBuilder.Entity<Promotion>()
             .Property(x => x.MinOrderValue)
             .HasPrecision(18, 2);
+
+        modelBuilder.Entity<PromotionUsage>()
+            .HasOne(x => x.Promotion)
+            .WithMany()
+            .HasForeignKey(x => x.PromotionId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<PromotionProduct>()
             .HasOne(x => x.Promotion)
@@ -177,6 +165,23 @@ public class SalesDbContext : DbContext
         modelBuilder.Entity<Notification>()
             .Property(x => x.Url)
             .HasMaxLength(500);
+
+        modelBuilder.Entity<CustomerAddress>()
+            .HasOne(x => x.Customer)
+            .WithMany(x => x.Addresses)
+            .HasForeignKey(x => x.CustomerId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Article>()
+            .HasIndex(x => x.Slug)
+            .IsUnique();
+
+        modelBuilder.Entity<Article>()
+            .Property(x => x.Content)
+            .HasColumnType("longtext");
+
+        modelBuilder.Entity<Banner>()
+            .HasIndex(x => x.SortOrder);
 
         base.OnModelCreating(modelBuilder);
     }

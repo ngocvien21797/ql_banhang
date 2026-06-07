@@ -171,6 +171,28 @@ public class ProductsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+    [HttpPost]
+    public async Task<IActionResult> AdjustStock(long id, int stock)
+    {
+        var product = await _db.Products.FindAsync(id);
+        if (product == null) return Json(new { success = false });
+
+        product.Stock = stock;
+        await _db.SaveChangesAsync();
+        return Json(new { success = true, stock });
+    }
+
+    [HttpPost]
+    public async Task<IActionResult> ToggleStatus(long id)
+    {
+        var product = await _db.Products.FindAsync(id);
+        if (product == null) return Json(new { success = false });
+
+        product.IsActive = !product.IsActive;
+        await _db.SaveChangesAsync();
+        return Json(new { success = true, isActive = product.IsActive });
+    }
+
     public async Task<IActionResult> Delete(long id)
     {
         var product = await _db.Products

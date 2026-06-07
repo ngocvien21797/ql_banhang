@@ -1,111 +1,215 @@
 @model QuanLyBanHang.Models.SalesInvoice
 @{
     ViewData["Title"] = "Chi tiết đơn hàng";
+    var totalQty = Model.Items?.Sum(i => i.Quantity) ?? 0;
 }
 
-<div class="page-header">
-    <div>
-        <h3><i class="bi bi-eye me-2"></i>Đơn @(!string.IsNullOrWhiteSpace(Model.Code) ? Model.Code : $"#{Model.Id}")</h3>
-        <p>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/admin-sales.css" asp-append-version="true" />
+}
+
+<!-- Header -->
+<div class="order-header">
+    <div class="order-header-left">
+        <div class="order-header-icon"><i class="bi bi-receipt"></i></div>
+        <div class="order-header-info">
+            <h4>Đơn @(!string.IsNullOrWhiteSpace(Model.Code) ? Model.Code : $"#{Model.Id}")</h4>
+            <p>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm") • @(Model.Customer?.Name ?? "Khách vãng lai")</p>
+        </div>
     </div>
-    <div class="page-actions">
-        <a class="btn btn-outline-secondary" asp-action="Index"><i class="bi bi-arrow-left me-1"></i>Quay lại</a>
-        <a class="btn btn-outline-danger" asp-action="Delete" asp-route-id="@Model.Id"><i class="bi bi-trash me-1"></i>Xóa</a>
+    <div class="order-header-right">
+        <a class="btn btn-outline-secondary btn-sm" asp-action="Index"><i class="bi bi-arrow-left me-1"></i>DS đơn hàng</a>
+        <a class="btn btn-outline-danger btn-sm" asp-action="Delete" asp-route-id="@Model.Id"><i class="bi bi-trash me-1"></i>Xóa</a>
     </div>
 </div>
 
-<div class="row g-4">
-    <div class="col-lg-4">
-        <div class="detail-card">
-            <div class="card-body">
-                <div class="text-muted small">Tổng tiền</div>
-                <div class="fs-3 fw-bold">@string.Format("{0:N0}", Model.Total) đ</div>
-
-                <div class="mt-3 d-flex flex-wrap gap-2">
-                    <span class="status-badge @(Model.Status=="Completed" ? "success" : Model.Status=="Cancelled" ? "danger" : Model.Status=="Shipped" ? "info" : "secondary")">@SalesInvoice.DisplayStatus(Model.Status)</span>
-                    <span class="status-badge @(Model.PaymentStatus=="Paid" ? "success" : Model.PaymentStatus=="Pending" ? "warning" : "secondary")">@SalesInvoice.DisplayPaymentMethod(Model.PaymentMethod) • @SalesInvoice.DisplayPaymentStatus(Model.PaymentStatus)</span>
-                </div>
-
-                <hr class="my-3" />
-
-                <form class="mb-3" method="post" asp-action="UpdateStatus">
-                    <input type="hidden" name="id" value="@Model.Id" />
-                    <label class="form-label fw-semibold">Cập nhật trạng thái</label>
-                    <select class="form-select mb-2" name="status">
-                        @foreach (var st in new[]{"Pending","Confirmed","Shipped","Completed","Cancelled"})
-                        {
-                            <option value="@st" selected="@(Model.Status==st)">@SalesInvoice.DisplayStatus(st)</option>
-                        }
-                    </select>
-                    <button class="btn btn-dark w-100"><i class="bi bi-save me-1"></i>Lưu trạng thái</button>
-                </form>
-
-                @if (Model.PaymentStatus != "Paid")
+<!-- Stats -->
+<div class="order-stats">
+    <div class="order-stat-card">
+        <div class="order-stat-label">Tổng tiền</div>
+        <div class="order-stat-value price">@string.Format("{0:N0}", Model.Total) <span style="font-size:14px;">đ</span></div>
+        <div class="order-stat-sub">@Model.Items?.Count sản phẩm • @totalQty cái</div>
+    </div>
+    <div class="order-stat-card">
+        <div class="order-stat-label">Trạng thái</div>
+        <div class="order-stat-value">
+            <span class="status-badge @(Model.Status=="Completed" ? "success" : Model.Status=="Cancelled" ? "danger" : Model.Status=="Shipped" ? "info" : "secondary")" data-order-id="@Model.Id" data-order-status="@Model.Status">@SalesInvoice.DisplayStatus(Model.Status)</span>
+        </div>
+        <div class="order-stat-sub">Tạo bởi: @Model.CreatedBy</div>
+    </div>
+    <div class="order-stat-card">
+        <div class="order-stat-label">Thanh toán</div>
+        <div class="order-stat-value">
+            <span class="status-badge @(Model.PaymentStatus=="Paid" ? "success" : Model.PaymentStatus=="Pending" ? "warning" : "secondary")">@SalesInvoice.DisplayPaymentMethod(Model.PaymentMethod) • @SalesInvoice.DisplayPaymentStatus(Model.PaymentStatus)</span>
+        </div>
+        <div class="order-stat-sub">
+            @if (Model.PaidAt.HasValue)
+            {
+                <span>Đã TT @Model.PaidAt.Value.ToString("dd/MM/yyyy HH:mm")</span>
+            }
+            else
+            {
+                <span>Phí ship: @string.Format("{0:N0}", Model.ShippingFee) đ</span>
+                @if (Model.Discount > 0)
                 {
-                    <form method="post" asp-action="MarkPaid">
-                        <input type="hidden" name="id" value="@Model.Id" />
-                        <button class="btn btn-success w-100"><i class="bi bi-check2-circle me-1"></i>Đánh dấu đã thanh toán</button>
-                    </form>
+                    <span> • Giảm: @string.Format("{0:N0}", Model.Discount) đ</span>
                 }
-                else
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Main content -->
+<div class="order-detail-grid">
+    <!-- Left: Info -->
+    <div>
+        <div class="order-info-card">
+            <div class="card-head"><i class="bi bi-person"></i>Thông tin giao hàng</div>
+            <div class="card-body">
+                <div class="info-row">
+                    <div class="info-label">Người nhận</div>
+                    <div class="info-value">@Model.ReceiverName</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">SĐT</div>
+                    <div class="info-value">@Model.ShippingPhone</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Địa chỉ</div>
+                    <div class="info-value">@Model.ShippingAddress</div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(Model.Note))
                 {
-                    <div class="text-muted small mt-2">
-                        <i class="bi bi-check-circle text-success me-1"></i>
-                        Đã thanh toán lúc @Model.PaidAt?.ToString("dd/MM/yyyy HH:mm")
+                    <div class="order-note-box">
+                        <i class="bi bi-chat-left-text"></i>
+                        <span>@Model.Note</span>
                     </div>
                 }
             </div>
         </div>
 
-        <div class="detail-card mt-3">
+        <div class="order-info-card mt-3">
+            <div class="card-head"><i class="bi bi-info-circle"></i>Chi tiết đơn hàng</div>
             <div class="card-body">
-                <div class="fw-semibold mb-3">Thông tin nhận hàng</div>
-                <div class="fw-bold">@Model.ReceiverName</div>
-                <div class="text-muted">@Model.ShippingPhone</div>
-                <div class="text-muted">@Model.ShippingAddress</div>
-                @if (!string.IsNullOrWhiteSpace(Model.Note))
-                {
-                    <div class="small mt-2 p-2" style="background:#f4f5f8;border-radius:8px;"><i class="bi bi-chat-left-text me-1"></i>@Model.Note</div>
-                }
-                <hr class="my-2" />
-                <div class="small text-muted">
-                    Khách hàng: @(Model.Customer?.Name ?? "-") (ID: @(Model.CustomerId?.ToString() ?? "-"))
+                <div class="info-row">
+                    <div class="info-label">Mã đơn</div>
+                    <div class="info-value">@(!string.IsNullOrWhiteSpace(Model.Code) ? Model.Code : $"#{Model.Id}")</div>
                 </div>
+                <div class="info-row">
+                    <div class="info-label">Khách hàng</div>
+                    <div class="info-value">@(Model.Customer?.Name ?? "-")</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Phương thức</div>
+                    <div class="info-value">@SalesInvoice.DisplayPaymentMethod(Model.PaymentMethod)</div>
+                </div>
+                <div class="info-row">
+                    <div class="info-label">Phí ship</div>
+                    <div class="info-value">@string.Format("{0:N0}", Model.ShippingFee) đ</div>
+                </div>
+                @if (Model.Discount > 0)
+                {
+                    <div class="info-row">
+                        <div class="info-label">Giảm giá</div>
+                        <div class="info-value" style="color:var(--primary);">-@string.Format("{0:N0}", Model.Discount) đ</div>
+                    </div>
+                }
             </div>
         </div>
     </div>
 
-    <div class="col-lg-8">
-        <div class="detail-card">
-            <div class="card-header"><h5 class="mb-0"><i class="bi bi-box me-2"></i>Sản phẩm trong đơn</h5></div>
-            <div class="p-0 card-body">
-                <div class="table-responsive">
-                    <table class="table align-middle mb-0">
-                        <thead>
-                            <tr>
-                                <th>Sản phẩm</th>
-                                <th class="text-end">Đơn giá</th>
-                                <th class="text-end">SL</th>
-                                <th class="text-end">Thành tiền</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var i in Model.Items)
+    <!-- Right: Actions -->
+    <div>
+        <div class="order-actions-card">
+            <div class="card-head"><i class="bi bi-gear"></i>Thao tác</div>
+            <div class="card-body">
+                <form method="post" asp-action="UpdateStatus">
+                    <input type="hidden" name="id" value="@Model.Id" />
+                    <div class="mb-2">
+                        <div class="form-label">Cập nhật trạng thái</div>
+                        <select class="form-select mb-2" name="status">
+                            @foreach (var st in new[]{"Pending","Confirmed","Shipped","Completed","Cancelled"})
                             {
-                                <tr>
-                                    <td>
-                                        <div class="fw-semibold">@(i.Product?.Name ?? ("#" + i.ProductId))</div>
-                                        <div class="small text-muted">@i.Product?.Sku</div>
-                                    </td>
-                                    <td class="text-end">@string.Format("{0:N0}", i.UnitPrice) đ</td>
-                                    <td class="text-end">@i.Quantity</td>
-                                    <td class="text-end fw-bold">@string.Format("{0:N0}", i.LineTotal) đ</td>
-                                </tr>
+                                <option value="@st" selected="@(Model.Status==st)" style="font-weight:600;">@SalesInvoice.DisplayStatus(st)</option>
                             }
-                        </tbody>
-                    </table>
-                </div>
+                        </select>
+                    </div>
+                    <button class="btn btn-dark"><i class="bi bi-save me-1"></i>Lưu trạng thái</button>
+                </form>
+
+                @if (Model.PaymentStatus != "Paid")
+                {
+                    <div class="order-action-divider"></div>
+                    <form method="post" asp-action="MarkPaid">
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <button class="btn btn-success"><i class="bi bi-check2-circle me-1"></i>Đánh dấu đã thanh toán</button>
+                    </form>
+                }
+                else
+                {
+                    <div class="order-action-divider"></div>
+                    <div class="order-paid-info">
+                        <i class="bi bi-check-circle"></i>
+                        Đã thanh toán @Model.PaidAt?.ToString("HH:mm dd/MM/yyyy")
+                    </div>
+                }
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Products table -->
+<div class="order-products-card">
+    <div class="card-head"><i class="bi bi-box"></i>Sản phẩm trong đơn</div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="order-products-table">
+                <thead>
+                    <tr>
+                        <th>Sản phẩm</th>
+                        <th class="text-end">Đơn giá</th>
+                        <th class="text-end">SL</th>
+                        <th class="text-end">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var i in Model.Items)
+                    {
+                        <tr>
+                            <td>
+                                <div class="product-name">@(i.Product?.Name ?? ("#" + i.ProductId))</div>
+                                <div class="product-sku">@i.Product?.Sku</div>
+                            </td>
+                            <td class="text-end">@string.Format("{0:N0}", i.UnitPrice) đ</td>
+                            <td class="text-end">@i.Quantity</td>
+                            <td class="text-end fw-bold">@string.Format("{0:N0}", i.LineTotal) đ</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="order-summary-row">
+        <table class="order-summary-table">
+            <tr>
+                <td>Tạm tính</td>
+                <td>@string.Format("{0:N0}", Model.Total - Model.ShippingFee + Model.Discount) đ</td>
+            </tr>
+            @if (Model.Discount > 0)
+            {
+                <tr>
+                    <td>Giảm giá</td>
+                    <td style="color:var(--primary);">-@string.Format("{0:N0}", Model.Discount) đ</td>
+                </tr>
+            }
+            <tr>
+                <td>Phí ship</td>
+                <td>@string.Format("{0:N0}", Model.ShippingFee) đ</td>
+            </tr>
+            <tr class="summary-total">
+                <td>Tổng cộng</td>
+                <td>@string.Format("{0:N0}", Model.Total) đ</td>
+            </tr>
+        </table>
     </div>
 </div>

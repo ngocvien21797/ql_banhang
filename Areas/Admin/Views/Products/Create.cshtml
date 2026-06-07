@@ -3,6 +3,10 @@
     ViewData["Title"] = "Thêm sản phẩm";
 }
 
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/admin-products.css" asp-append-version="true" />
+}
+
 <div class="page-header">
     <div>
         <h3><i class="bi bi-plus-circle me-2"></i>Thêm sản phẩm</h3>
@@ -27,6 +31,7 @@
                 <div class="col-md-3">
                     <label class="form-label">Thương hiệu</label>
                     <input class="form-control" asp-for="Brand" placeholder="VD: Samsung, Apple..." />
+                    <span class="text-danger" asp-validation-for="Brand"></span>
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Tên sản phẩm</label>
@@ -53,20 +58,38 @@
                 <div class="col-md-3">
                     <label class="form-label">Bảo hành (tháng)</label>
                     <input class="form-control" asp-for="WarrantyMonths" min="0" />
+                    <span class="text-danger" asp-validation-for="WarrantyMonths"></span>
                 </div>
-                <div class="col-md-3 d-flex align-items-end pb-2">
-                    <div class="form-check">
-                        <input class="form-check-input" asp-for="IsActive" />
-                        <label class="form-check-label fw-semibold" asp-for="IsActive">Đang bán</label>
+                <div class="col-md-3">
+                    <label class="form-label">Trạng thái</label>
+                    <select class="form-select" asp-for="IsActive" onchange="colorStatusSelect(this)">
+                        <option value="true" style="background:#d4edda;color:#000;">Đang bán</option>
+                        <option value="false" style="background:#f8d7da;color:#000;">Ngừng bán</option>
+                    </select>
+                </div>
+                <div class="col-12 product-desc-wrap">
+                    <label class="form-label"><i class="bi bi-info-circle me-1"></i>Giới thiệu sản phẩm</label>
+                    <textarea class="form-control" asp-for="Description" rows="6" placeholder="Nhập nội dung giới thiệu sản phẩm..."></textarea>
+                    <div class="product-desc-hint">Nội dung này sẽ hiển thị ở trang chi tiết sản phẩm cho khách hàng.</div>
+                </div>
+                <div class="col-12 product-specs-wrap">
+                    <label class="form-label">Thông số kỹ thuật</label>
+                    <div class="specs-builder" id="specsBuilder">
+                        <div class="specs-builder-header">
+                            <span>Tên thông số</span>
+                            <span>Giá trị</span>
+                            <span></span>
+                        </div>
+                        <div id="specsRows">
+                            <div class="specs-row">
+                                <input class="specs-input" name="specLabels" placeholder="VD: Màn hình" />
+                                <input class="specs-input" name="specValues" placeholder="VD: 6.7 inch" />
+                                <button type="button" class="specs-remove-btn" onclick="removeSpecRow(this)" title="Xoá"><i class="bi bi-x"></i></button>
+                            </div>
+                        </div>
+                        <button type="button" class="specs-add-btn" onclick="addSpecRow()"><i class="bi bi-plus-lg"></i>Thêm thông số</button>
                     </div>
-                </div>
-                <div class="col-12">
-                    <label class="form-label">Mô tả</label>
-                    <textarea class="form-control" asp-for="Description" rows="3" placeholder="Mô tả sản phẩm..."></textarea>
-                </div>
-                <div class="col-12">
-                    <label class="form-label">Thông số kỹ thuật (JSON)</label>
-                    <textarea class="form-control" asp-for="Specifications" rows="3" placeholder='VD: {"Màn hình":"6.7 inch","RAM":"8GB","ROM":"256GB"}'></textarea>
+                    <input type="hidden" asp-for="Specifications" id="specsJson" />
                 </div>
             </div>
         </div>
@@ -79,4 +102,38 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        function colorStatusSelect(el) {
+            var opt = el.options[el.selectedIndex];
+            el.style.background = opt.style.background;
+            el.style.color = '#000';
+        }
+        colorStatusSelect(document.getElementById('@Html.IdFor(m => m.IsActive)'));
+
+        function addSpecRow() {
+            var div = document.createElement('div');
+            div.className = 'specs-row';
+            div.innerHTML = '<input class="specs-input" name="specLabels" placeholder="Tên thông số" />' +
+                '<input class="specs-input" name="specValues" placeholder="Giá trị" />' +
+                '<button type="button" class="specs-remove-btn" onclick="removeSpecRow(this)" title="Xo\u00e1"><i class="bi bi-x"></i></button>';
+            document.getElementById('specsRows').appendChild(div);
+        }
+        function removeSpecRow(btn) {
+            var rows = document.getElementById('specsRows');
+            if (rows.children.length <= 1) return;
+            btn.closest('.specs-row').remove();
+        }
+        document.getElementById('specsBuilder').closest('form').addEventListener('submit', function() {
+            var rows = document.querySelectorAll('#specsRows .specs-row');
+            var specs = [];
+            rows.forEach(function(row) {
+                var label = row.querySelector('input[name="specLabels"]').value.trim();
+                var value = row.querySelector('input[name="specValues"]').value.trim();
+                if (label || value) {
+                    specs.push({ label: label, value: value });
+                }
+            });
+            document.getElementById('specsJson').value = JSON.stringify(specs);
+        });
+    </script>
 }

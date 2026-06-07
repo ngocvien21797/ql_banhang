@@ -32,6 +32,14 @@ public class Promotion
 
     public bool IsActive { get; set; } = true;
 
+    [Range(0, int.MaxValue)]
+    public int? MaxUsageCount { get; set; }
+
+    [Range(0, int.MaxValue)]
+    public int? MaxUsagePerCustomer { get; set; }
+
+    public int UsageCount { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     public long? CreatedBy { get; set; }

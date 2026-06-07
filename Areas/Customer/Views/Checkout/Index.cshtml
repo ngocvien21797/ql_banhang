@@ -2,6 +2,7 @@
 @{
     ViewData["Title"] = "Thanh toán";
     var hasError = ViewBag.ValidationErrors == true || TempData["Error"] != null;
+    var promos = ViewBag.ApplicablePromotions as List<QuanLyBanHang.Models.Promotion>;
 }
 @section Styles{
     <link rel="stylesheet" href="~/css/customer/Checkout.css" />
@@ -23,6 +24,21 @@
             </div>
         }
 
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="checkout-alert alert alert-danger">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Vui lòng kiểm tra lại thông tin:
+                <ul class="mb-0 mt-1">
+                    @foreach (var err in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        <li>@err.ErrorMessage</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        <div id="checkoutErrors" class="checkout-alert alert alert-danger" style="display:none;"></div>
+
         <form method="post" asp-action="PlaceOrder" id="checkoutForm" class="checkout-form">
             <div class="row g-4">
 
@@ -35,61 +51,59 @@
                             <i class="bi bi-person-fill"></i>
                             Thông tin người nhận
                         </div>
-                        <div class="row g-3">
-                            <div class="col-sm-6">
-                                <label class="form-label">Họ tên <span class="text-danger">*</span></label>
-                                <input class="checkout-input" name="ReceiverName" value="@Model.ReceiverName"
-                                       placeholder="Nhập họ tên" required />
-                                <span class="field-error" data-field="ReceiverName"></span>
-                            </div>
-                            <div class="col-sm-6">
-                                <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
-                                <input class="checkout-input" name="Phone" value="@Model.Phone"
-                                       placeholder="090xxxxxxx" required type="tel" />
-                                <span class="field-error" data-field="Phone"></span>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label">Email</label>
-                                <input class="checkout-input" name="Email" value="@Model.Email"
-                                       placeholder="email@example.com" type="email" />
-                                <span class="field-error" data-field="Email"></span>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- SHIPPING ADDRESS -->
-                    <div class="checkout-card mb-3">
-                        <div class="section-title">
-                            <i class="bi bi-geo-alt-fill"></i>
-                            Địa chỉ giao hàng
-                        </div>
-                        <div class="row g-3">
-                            <div class="col-sm-4">
-                                <label class="form-label">Tỉnh / Thành phố</label>
-                                <select class="checkout-input" name="Province" id="provinceSelect">
-                                    <option value="">— Chọn tỉnh/thành —</option>
-                                    @foreach (var p in Model.Provinces)
+                        <div class="mb-3">
+                            <label class="form-label">Chọn địa chỉ nhận hàng</label>
+                            <div class="saved-addresses" id="savedAddresses">
+                                @if (Model.SavedAddresses.Count > 0)
+                                {
+                                    @foreach (var a in Model.SavedAddresses)
                                     {
-                                        <option value="@p" selected="@(Model.Province == p)">@p</option>
+                                        <div class="saved-addr-option @(a.Id == Model.SelectedAddressId ? "selected" : "")"
+                                             onclick="selectAddress(@a.Id, this)">
+                                            <input type="radio" name="SelectedAddressId" value="@a.Id"
+                                                   @(a.Id == Model.SelectedAddressId ? "checked" : "") hidden />
+                                            <div class="saved-addr-info">
+                                                <div class="saved-addr-name">
+                                                    @a.ReceiverName
+                                                    @if (a.IsDefault)
+                                                    {
+                                                        <span class="badge bg-danger ms-1" style="font-size:10px;">Mặc định</span>
+                                                    }
+                                                    @if (!string.IsNullOrWhiteSpace(a.Label))
+                                                    {
+                                                        <span class="badge bg-light text-dark ms-1" style="font-size:10px;">@a.Label</span>
+                                                    }
+                                                </div>
+                                                <div class="saved-addr-detail">@a.Phone &middot; @a.Address</div>
+                                            </div>
+                                            <i class="bi bi-check-circle-fill saved-addr-check"></i>
+                                        </div>
                                     }
-                                </select>
+                                }
+                                else
+                                {
+                                    <div class="text-muted small py-2">Chưa có địa chỉ nào.</div>
+                                }
                             </div>
-                            <div class="col-sm-4">
-                                <label class="form-label">Quận / Huyện</label>
-                                <input class="checkout-input" name="District" value="@Model.District"
-                                       placeholder="Quận / Huyện" />
-                            </div>
-                            <div class="col-sm-4">
-                                <label class="form-label">Phường / Xã</label>
-                                <input class="checkout-input" name="Ward" value="@Model.Ward"
-                                       placeholder="Phường / Xã" />
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label">Địa chỉ chi tiết <span class="text-danger">*</span></label>
-                                <input class="checkout-input" name="Address" value="@Model.Address"
-                                       placeholder="Số nhà, tên đường" required />
-                                <span class="field-error" data-field="Address"></span>
-                            </div>
+                        </div>
+
+                        <!-- Hidden fields for selected address data -->
+                        <input type="hidden" name="ReceiverName" id="hidReceiverName" value="@Model.ReceiverName" />
+                        <input type="hidden" name="Phone" id="hidPhone" value="@Model.Phone" />
+                        <input type="hidden" name="Address" id="hidAddress" value="@Model.Address" />
+
+                        <div class="d-flex align-items-center gap-2 mt-2">
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="showAddAddressModal()">
+                                <i class="bi bi-plus-circle me-1"></i>Thêm địa chỉ mới
+                            </button>
+                        </div>
+
+                        <div class="mt-3">
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
+                            <input class="checkout-input" name="Email" id="checkoutEmail" value="@Model.Email"
+                                   placeholder="email@example.com" type="email" required style="max-width:350px;" />
+                            <span class="field-error" data-field="Email"></span>
                         </div>
                     </div>
 
@@ -112,20 +126,6 @@
                                 </div>
                                 <div class="shipping-fee" data-method="standard">
                                     <span class="shipping-fee-label">20,000đ – 35,000đ</span>
-                                </div>
-                            </label>
-                            <label class="shipping-option @(Model.ShippingMethod == "fast" ? "selected" : "")">
-                                <input type="radio" name="ShippingMethod" value="fast"
-                                @(Model.ShippingMethod == "fast" ? "checked" : "") />
-                                <span class="radio-custom"></span>
-                                <div class="shipping-info">
-                                    <div class="shipping-title">
-                                        <i class="bi bi-lightning-fill"></i> Giao nhanh
-                                    </div>
-                                    <div class="shipping-desc">Nhận hàng trong 1-2 ngày làm việc</div>
-                                </div>
-                                <div class="shipping-fee" data-method="fast">
-                                    <span class="shipping-fee-label">30,000đ – 50,000đ</span>
                                 </div>
                             </label>
                             <label class="shipping-option @(Model.ShippingMethod == "economy" ? "selected" : "")">
@@ -204,7 +204,14 @@
                                 <div class="summary-item">
                                     <div class="summary-left">
                                         <div class="summary-thumb">
-                                            <i class="bi bi-box"></i>
+                                            @if (!string.IsNullOrEmpty(line.Product.ImagePath))
+                                            {
+                                                <img src="@line.Product.ImagePath" alt="@line.Product.Name" />
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-box"></i>
+                                            }
                                         </div>
                                         <div class="summary-details">
                                             <div class="summary-name">@line.Product.Name</div>
@@ -216,61 +223,48 @@
                             }
                         </div>
 
-                        <!-- KHUYẾN MÃI ÁP DỤNG -->
-                        @{
-                            var promos = ViewBag.ApplicablePromotions as List<QuanLyBanHang.Models.Promotion>;
-                        }
-                        @if (promos != null && promos.Count > 0)
-                        {
-                            <div class="promo-list mb-3">
-                                <div class="promo-list-title"><i class="bi bi-tags-fill me-1"></i>Khuyến mãi áp dụng</div>
-                                @foreach (var p in promos)
-                                {
-                                    <div class="promo-item">
-                                        <div class="promo-item-left">
-                                            <div class="promo-icon">
-                                                <i class="bi bi-ticket-perforated"></i>
-                                            </div>
-                                            <div>
-                                                <div class="promo-name">@p.Name</div>
-                                                <div class="promo-code">Mã: <strong>@p.Code</strong></div>
-                                                @if (!string.IsNullOrWhiteSpace(p.Description))
-                                                {
-                                                    <div class="promo-desc">@p.Description</div>
-                                                }
-                                                <div class="promo-badge">
-                                                    @if (p.DiscountType == "Percentage")
-                                                    {
-                                                        <span>Giảm <strong>@(((int)p.DiscountValue).ToString())%</strong></span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span>Giảm <strong>@string.Format("{0:N0}₫", p.DiscountValue)</strong></span>
-                                                    }
-                                                    @if (p.MinOrderValue.HasValue)
-                                                    {
-                                                        <span class="promo-min-order">Đơn từ @string.Format("{0:N0}₫", p.MinOrderValue)</span>
-                                                    }
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <button type="button" class="promo-apply-btn"
-                                                data-code="@p.Code"
-                                                onclick="document.getElementById('voucherInput').value=this.dataset.code;applyVoucher();">
-                                            Áp dụng
-                                        </button>
-                                    </div>
-                                }
-                            </div>
-                        }
-
                         <!-- VOUCHER -->
-                        <div class="voucher-row">
+                        <div class="voucher-row" style="position:relative;">
                             <input class="checkout-input" id="voucherInput" name="VoucherCode"
-                                   value="@Model.VoucherCode" placeholder="Nhập mã giảm giá" />
+                                   value="@Model.VoucherCode" placeholder="Nhập mã giảm giá"
+                                   autocomplete="off" />
                             <button type="button" id="applyVoucherBtn" class="voucher-btn">
                                 <i class="bi bi-ticket-perforated"></i> Áp dụng
                             </button>
+                            @if (promos != null && promos.Count > 0)
+                            {
+                                <div id="promoSuggestions" class="promo-suggestions">
+                                    <div class="promo-suggest-title">Mã khuyến mãi áp dụng</div>
+                                    @foreach (var p in promos)
+                                    {
+                                        <div class="promo-suggest-item" data-code="@p.Code"
+                                             onclick="document.getElementById('voucherInput').value=this.dataset.code;applyVoucher();this.closest('.promo-suggestions').classList.remove('show');">
+                                            <div class="promo-suggest-left">
+                                                <i class="bi bi-ticket-perforated"></i>
+                                            </div>
+                                            <div class="promo-suggest-info">
+                                                <div class="promo-suggest-name">@p.Name</div>
+                                                <div class="promo-suggest-code">Mã: <strong>@p.Code</strong></div>
+                                                <div class="promo-suggest-desc">@p.Description</div>
+                                            </div>
+                                            <div class="promo-suggest-badge">
+                                                @if (p.DiscountType == "Percentage")
+                                                {
+                                                    <span>-@(((int)p.DiscountValue).ToString())%</span>
+                                                }
+                                                else
+                                                {
+                                                    <span>-@string.Format("{0:N0}₫", p.DiscountValue)</span>
+                                                }
+                                                @if (p.MinOrderValue.HasValue)
+                                                {
+                                                    <span class="promo-suggest-min">Đơn từ @string.Format("{0:N0}₫", p.MinOrderValue)</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
                         </div>
                         <div id="voucherResult" class="voucher-result"></div>
 
@@ -288,9 +282,10 @@
                             <input type="hidden" id="hidShipping" value="@Model.ShippingFee" />
                         </div>
                         <div class="summary-row" id="discountRow" style="@(Model.Discount > 0 ? "" : "display:none")">
-                            <span>Giảm giá</span>
+                            <span><i class="bi bi-ticket-perforated me-1"></i>Giảm giá</span>
                             <strong class="text-success" id="displayDiscount">-@string.Format("{0:N0}₫", Model.Discount)</strong>
                             <input type="hidden" id="hidDiscount" value="@Model.Discount" />
+                            <input type="hidden" id="hidPromoCode" value="@Model.VoucherCode" />
                         </div>
                         <div class="summary-total">
                             <span>Tổng cộng</span>
@@ -299,14 +294,10 @@
                         </div>
 
                         <!-- SUBMIT -->
-                        <button type="submit" class="checkout-submit-btn" id="placeOrderBtn">
+                        <button type="button" class="checkout-submit-btn" id="placeOrderBtn"
+                                onclick="showConfirmOrder()">
                             <i class="bi bi-check2-circle"></i> Đặt hàng
                         </button>
-
-                        <div class="checkout-note">
-                            <i class="bi bi-shield-check me-1"></i>
-                            Demo phục vụ bài cuối kỳ — thông tin thanh toán được mô phỏng
-                        </div>
 
                         <button type="button" class="checkout-back-btn"
                                 onclick="location.href='@Url.Action("Index","Cart")'">
@@ -320,51 +311,195 @@
             </div>
         </form>
 
+<!-- Confirm Order Modal -->
+<div class="modal fade" id="confirmOrderModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-check-circle me-2"></i>Xác nhận đặt hàng</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Bạn có chắc chắn muốn đặt đơn hàng này?</p>
+                <div class="bg-light p-3 rounded-3">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Người nhận:</span>
+                        <span class="fw-semibold" id="confirmName">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">SĐT:</span>
+                        <span class="fw-semibold" id="confirmPhone">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Địa chỉ:</span>
+                        <span class="fw-semibold text-end" style="max-width:60%;" id="confirmAddress">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Email:</span>
+                        <span class="fw-semibold" id="confirmEmail">-</span>
+                    </div>
+                    <hr />
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Tạm tính:</span>
+                        <span id="confirmSubtotal">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Phí ship:</span>
+                        <span id="confirmShipping">-</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-1" id="confirmDiscountRow" style="display:none;">
+                        <span class="text-muted">Giảm giá:</span>
+                        <span class="text-danger" id="confirmDiscount">-</span>
+                    </div>
+                    <hr />
+                    <div class="d-flex justify-content-between fw-bold fs-5">
+                        <span>Tổng cộng:</span>
+                        <span class="text-danger" id="confirmTotal">-</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+                <button type="button" class="btn btn-danger" onclick="submitOrder()">
+                    <i class="bi bi-check-lg me-1"></i>Xác nhận đặt hàng
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Address Modal -->
+<div class="modal fade" id="addAddressModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-plus-circle me-2"></i>Thêm địa chỉ mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Họ tên <span class="text-danger">*</span></label>
+                    <input class="form-control" id="modalReceiverName" placeholder="Nhập họ tên" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Số điện thoại <span class="text-danger">*</span></label>
+                    <input class="form-control" id="modalPhone" placeholder="090xxxxxxx" type="tel" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Địa chỉ chi tiết <span class="text-danger">*</span></label>
+                    <input class="form-control" id="modalAddress" placeholder="Số nhà, tên đường, phường/xã, quận/huyện, tỉnh/thành" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ghi chú (VD: Nhà riêng, Cơ quan)</label>
+                    <input class="form-control" id="modalLabel" placeholder="Nhà riêng" />
+                </div>
+                <div id="modalError" class="alert alert-danger d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Huỷ</button>
+                <button type="button" class="btn btn-danger" onclick="saveNewAddress()">
+                    <i class="bi bi-check-lg me-1"></i>Lưu địa chỉ
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
     </div>
 </div>
 
 @section Scripts{
     <script>
-        // ==================== REAL-TIME VALIDATION ====================
-        document.querySelectorAll('.checkout-input[required]').forEach(el => {
-            el.addEventListener('blur', function () {
-                const errSpan = document.querySelector(`.field-error[data-field="${this.name}"]`);
-                if (!errSpan) return;
-                if (!this.value.trim()) {
-                    this.classList.add('is-invalid');
-                    errSpan.textContent = 'Vui lòng nhập ' + this.placeholder || 'thông tin này';
-                    errSpan.style.display = 'block';
-                } else {
-                    this.classList.remove('is-invalid');
-                    errSpan.textContent = '';
-                    errSpan.style.display = 'none';
-                }
-            });
-        });
+        // ==================== SAVED ADDRESSES ====================
+        function selectAddress(id, el) {
+            document.querySelectorAll('.saved-addr-option').forEach(o => o.classList.remove('selected'));
+            el.classList.add('selected');
+            el.querySelector('input[type="radio"]').checked = true;
 
-        // Phone validation
-        const phoneInput = document.querySelector('input[name="Phone"]');
-        if (phoneInput) {
-            phoneInput.addEventListener('blur', function () {
-                const errSpan = document.querySelector('.field-error[data-field="Phone"]');
-                if (!errSpan) return;
-                const v = this.value.trim();
-                if (v && !/^0[0-9]{9,10}$/.test(v)) {
-                    this.classList.add('is-invalid');
-                    errSpan.textContent = 'SĐT gồm 10-11 số, bắt đầu bằng 0';
-                    errSpan.style.display = 'block';
-                } else if (!v) {
-                    this.classList.add('is-invalid');
-                    errSpan.textContent = 'Vui lòng nhập số điện thoại';
-                    errSpan.style.display = 'block';
-                } else {
-                    this.classList.remove('is-invalid');
-                    errSpan.textContent = '';
-                    errSpan.style.display = 'none';
+            fetch('@Url.Action("GetAddress","Checkout")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ id })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('hidReceiverName').value = data.receiverName;
+                    document.getElementById('hidPhone').value = data.phone;
+                    document.getElementById('hidAddress').value = data.address;
                 }
             });
         }
 
+        function showAddAddressModal() {
+            document.getElementById('modalReceiverName').value = '';
+            document.getElementById('modalPhone').value = '';
+            document.getElementById('modalAddress').value = '';
+            document.getElementById('modalLabel').value = '';
+            document.getElementById('modalError').classList.add('d-none');
+            var modal = new bootstrap.Modal(document.getElementById('addAddressModal'));
+            modal.show();
+        }
+
+        function saveNewAddress() {
+            var name = document.getElementById('modalReceiverName').value.trim();
+            var phone = document.getElementById('modalPhone').value.trim();
+            var addr = document.getElementById('modalAddress').value.trim();
+            var label = document.getElementById('modalLabel').value.trim();
+
+            var errDiv = document.getElementById('modalError');
+            errDiv.classList.add('d-none');
+
+            if (!name) { showModalError('Vui lòng nhập họ tên.'); return; }
+            if (!phone) { showModalError('Vui lòng nhập số điện thoại.'); return; }
+            if (!addr) { showModalError('Vui lòng nhập địa chỉ.'); return; }
+
+            fetch('@Url.Action("AddAddress","Checkout")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: new URLSearchParams({ receiverName: name, phone: phone, address: addr, label: label })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    var newCard = document.createElement('div');
+                    newCard.className = 'saved-addr-option selected';
+                    newCard.setAttribute('onclick', 'selectAddress(' + data.id + ', this)');
+                    newCard.innerHTML =
+                        '<input type="radio" name="SelectedAddressId" value="' + data.id + '" checked hidden>' +
+                        '<div class="saved-addr-info">' +
+                            '<div class="saved-addr-name">' + data.receiverName + '</div>' +
+                            '<div class="saved-addr-detail">' + data.phone + ' &middot; ' + data.address + '</div>' +
+                        '</div>' +
+                        '<i class="bi bi-check-circle-fill saved-addr-check"></i>';
+
+                    var container = document.getElementById('savedAddresses');
+                    var emptyMsg = container.querySelector('.text-muted.small');
+                    if (emptyMsg) emptyMsg.remove();
+                    document.querySelectorAll('.saved-addr-option').forEach(o => o.classList.remove('selected'));
+                    container.prepend(newCard);
+
+                    document.getElementById('hidReceiverName').value = data.receiverName;
+                    document.getElementById('hidPhone').value = data.phone;
+                    document.getElementById('hidAddress').value = data.address;
+
+                    bootstrap.Modal.getInstance(document.getElementById('addAddressModal')).hide();
+                } else {
+                    showModalError(data.message || 'Không thể lưu địa chỉ.');
+                }
+            })
+            .catch(function () {
+                showModalError('Lỗi kết nối, vui lòng thử lại.');
+            });
+        }
+
+        function showModalError(msg) {
+            var errDiv = document.getElementById('modalError');
+            errDiv.textContent = msg;
+            errDiv.classList.remove('d-none');
+        }
+
+        // ==================== REAL-TIME VALIDATION ====================
         // Email validation
         const emailInput = document.querySelector('input[name="Email"]');
         if (emailInput) {
@@ -406,12 +541,11 @@
         // ==================== UPDATE SHIPPING FEE ====================
         async function updateShipping() {
             const method = document.querySelector('input[name="ShippingMethod"]:checked')?.value || 'standard';
-            const province = document.querySelector('select[name="Province"]')?.value || '';
             try {
                 const res = await fetch('@Url.Action("CalcShippingFee","Checkout")', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ method, province })
+                    body: new URLSearchParams({ method, province: '' })
                 });
                 const data = await res.json();
                 if (data.success) {
@@ -421,8 +555,6 @@
                 }
             } catch (e) { console.log('calc shipping error', e); }
         }
-
-        document.querySelector('select[name="Province"]')?.addEventListener('change', updateShipping);
 
         // ==================== VOUCHER ====================
         document.getElementById('applyVoucherBtn')?.addEventListener('click', applyVoucher);
@@ -453,14 +585,16 @@
                 if (data.success) {
                     resultDiv.innerHTML =
                         `<span class="voucher-success"><i class="bi bi-check-circle-fill me-1"></i>${data.discountLabel}: -${data.discount.toLocaleString()}₫</span>`;
-                    document.getElementById('displayDiscount').textContent = '-' + data.discount.toLocaleString() + '₫';
+                    document.getElementById('displayDiscount').innerHTML = '-<strong>' + data.discount.toLocaleString() + '₫</strong> <span class="text-muted small">' + data.promoCode + '</span>';
                     document.getElementById('hidDiscount').value = data.discount;
+                    document.getElementById('hidPromoCode').value = data.promoCode;
                     document.getElementById('discountRow').style.display = 'flex';
                 } else {
                     resultDiv.innerHTML =
                         `<span class="voucher-error"><i class="bi bi-x-circle-fill me-1"></i>${data.message}</span>`;
-                    document.getElementById('displayDiscount').textContent = '-0₫';
+                    document.getElementById('displayDiscount').innerHTML = '-<strong>0₫</strong>';
                     document.getElementById('hidDiscount').value = 0;
+                    document.getElementById('hidPromoCode').value = '';
                     document.getElementById('discountRow').style.display = 'none';
                 }
                 recalcTotal();
@@ -488,6 +622,18 @@
             }
         };
 
+        // ==================== PROMO SUGGESTIONS DROPDOWN ====================
+        var voucherInput = document.getElementById('voucherInput');
+        var suggestions = document.getElementById('promoSuggestions');
+        if (voucherInput && suggestions) {
+            voucherInput.addEventListener('focus', function () {
+                suggestions.classList.add('show');
+            });
+            voucherInput.addEventListener('blur', function () {
+                setTimeout(function () { suggestions.classList.remove('show'); }, 200);
+            });
+        }
+
         // ==================== RECALC TOTAL ====================
         function recalcTotal() {
             const subtotal = parseFloat(document.getElementById('hidSubtotal').value) || 0;
@@ -499,11 +645,62 @@
 
         }
 
-        // ==================== LOADING ON SUBMIT ====================
-        document.getElementById('checkoutForm')?.addEventListener('submit', function () {
-            const btn = document.getElementById('placeOrderBtn');
+        // ==================== CONFIRM ORDER ====================
+        function showConfirmOrder() {
+            var name = document.getElementById('hidReceiverName').value.trim();
+            var phone = document.getElementById('hidPhone').value.trim();
+            var addr = document.getElementById('hidAddress').value.trim();
+            var email = document.getElementById('checkoutEmail').value.trim();
+            var errors = [];
+
+            if (!name) errors.push('Thiếu họ tên người nhận.');
+            if (!phone) errors.push('Thiếu số điện thoại.');
+            else if (!/^0[0-9]{9,10}$/.test(phone)) errors.push('Số điện thoại không hợp lệ (10-11 số, bắt đầu bằng 0).');
+            if (!addr) errors.push('Thiếu địa chỉ giao hàng.');
+            if (!email) errors.push('Thiếu email nhận xác nhận.');
+            else if (email.indexOf('@@') < 0 || email.indexOf('.') < 0) errors.push('Email không hợp lệ.');
+
+            if (errors.length > 0) {
+                var msg = '<i class="bi bi-exclamation-circle me-1"></i> Vui lòng kiểm tra lại thông tin:<ul class="mb-0 mt-1">';
+                for (var i = 0; i < errors.length; i++) {
+                    msg += '<li>' + errors[i] + '</li>';
+                }
+                msg += '</ul>';
+                var errDiv = document.getElementById('checkoutErrors');
+                errDiv.innerHTML = msg;
+                errDiv.style.display = 'block';
+                errDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return;
+            }
+
+            document.getElementById('confirmName').textContent = name;
+            document.getElementById('confirmPhone').textContent = phone;
+            document.getElementById('confirmAddress').textContent = addr;
+            document.getElementById('confirmEmail').textContent = email;
+
+            document.getElementById('confirmSubtotal').textContent = document.getElementById('displaySubtotal')?.textContent || '-';
+            document.getElementById('confirmShipping').textContent = document.getElementById('displayShipping')?.textContent || '-';
+
+            var discountRow = document.getElementById('discountRow');
+            if (discountRow && discountRow.style.display !== 'none') {
+                document.getElementById('confirmDiscountRow').style.display = 'block';
+                document.getElementById('confirmDiscount').textContent = document.getElementById('displayDiscount')?.textContent || '-';
+            } else {
+                document.getElementById('confirmDiscountRow').style.display = 'none';
+            }
+
+            document.getElementById('confirmTotal').textContent = document.getElementById('displayTotal')?.textContent || '-';
+
+            var modal = new bootstrap.Modal(document.getElementById('confirmOrderModal'));
+            modal.show();
+        }
+
+        function submitOrder() {
+            var btn = document.getElementById('placeOrderBtn');
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> Đang xử lý...';
-        });
+            bootstrap.Modal.getInstance(document.getElementById('confirmOrderModal')).hide();
+            document.getElementById('checkoutForm').submit();
+        }
     </script>
 }

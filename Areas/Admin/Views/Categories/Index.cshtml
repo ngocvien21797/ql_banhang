@@ -4,6 +4,12 @@
     ViewData["Title"] = "Danh mục";
     var pagination = ViewBag.Pagination as QuanLyBanHang.ViewModels.PaginationModel;
     var count = Model.Count();
+    var catIcons = new[] { "blue", "green", "orange", "purple", "pink", "teal" };
+    var catIconClasses = new[] { "bi-box", "bi-box-seam", "bi-archive", "bi-stack", "bi-layers", "bi-grid" };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/admin/admin-categories.css" asp-append-version="true" />
 }
 
 <div class="page-header">
@@ -35,11 +41,10 @@
     </div>
     <div class="card-body p-0">
         <div class="table-responsive">
-            <table class="table align-middle mb-0">
+            <table class="table align-middle mb-0 cat-table">
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Tên danh mục</th>
+                        <th>Danh mục</th>
                         <th class="text-center">Số SP</th>
                         <th class="text-end">Tồn kho</th>
                         <th class="text-end">Giá trị kho</th>
@@ -47,15 +52,28 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @{
+                        var idx = 0;
+                    }
                     @foreach(var item in Model) {
+                        var ci = catIcons[idx % catIcons.Length];
+                        var ic = catIconClasses[idx % catIconClasses.Length];
+                        idx++;
                         <tr>
-                            <td class="fw-semibold">@item.Id</td>
-                            <td>@item.Name</td>
-                            <td class="text-center">
-                                <span class="badge bg-info">@item.ProductCount</span>
+                            <td>
+                                <div class="cat-cell">
+                                    <div class="cat-icon @ci"><i class="@ic"></i></div>
+                                    <div class="cat-info">
+                                        <h6>@item.Name</h6>
+                                        <small>Mã: @item.Id</small>
+                                    </div>
+                                </div>
                             </td>
-                            <td class="text-end">@item.TotalStock.ToString("N0")</td>
-                            <td class="text-end fw-semibold">@item.TotalValue.ToString("N0")</td>
+                            <td class="text-center">
+                                <span class="badge bg-info rounded-pill">@item.ProductCount</span>
+                            </td>
+                            <td class="text-end"><span class="stock-num">@item.TotalStock.ToString("N0")</span></td>
+                            <td class="text-end"><span class="value-num">@item.TotalValue.ToString("N0") đ</span></td>
                             <td class="text-end">
                                 <div class="btn-group">
                                     <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary" title="Xem"><i class="bi bi-eye"></i></a>

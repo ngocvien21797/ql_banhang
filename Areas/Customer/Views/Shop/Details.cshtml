@@ -5,6 +5,7 @@
     var subtotal = Model.Items.Sum(i => i.LineTotal);
     var sc = Model.Status switch { "Completed" => "success", "Cancelled" => "danger", "Shipped" => "primary", "Confirmed" => "info", _ => "secondary" };
     var pc = Model.PaymentStatus == "Paid" ? "success" : "warning";
+    var showReview = TempData["ShowReview"] as string == "1";
 }
 
 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4">
@@ -238,4 +239,136 @@
 
 <style>
     .minw-0 { min-width: 0; }
+    .star-rating { display: inline-flex; flex-direction: row-reverse; gap: 2px; }
+    .star-rating input { display: none; }
+    .star-rating label { cursor: pointer; font-size: 28px; color: #d1d5db; transition: color .15s; }
+    .star-rating label:hover,
+    .star-rating label:hover ~ label,
+    .star-rating input:checked ~ label { color: #f59e0b; }
+    .card.border-0.shadow-sm { border: 1px solid #c0c0c0 !important; box-shadow: none !important; }
 </style>
+
+<!-- Modal đánh giá sản phẩm -->
+@if (Model.Status == "Completed" && Model.Items.Any())
+{
+    <div class="modal fade" id="reviewModal" tabindex="-1" data-bs-backdrop="static">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content border-0 shadow rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="fw-bold"><i class="bi bi-star-fill text-warning me-2"></i>Đánh giá sản phẩm</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body px-4">
+                    <p class="text-muted small mb-4">Cảm ơn bạn đã mua hàng! Hãy cho chúng tôi biết cảm nhận của bạn về từng sản phẩm.</p>
+                    @foreach (var item in Model.Items)
+                    {
+                        <div class="border rounded-3 p-3 mb-3" data-product-id="@item.ProductId">
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <div class="bg-light rounded flex-shrink-0 overflow-hidden" style="width:48px;height:48px;">
+                                    @if (!string.IsNullOrWhiteSpace(item.Product?.ImagePath))
+                                    {
+                                        <img src="@item.Product.ImagePath" alt="" style="width:48px;height:48px;object-fit:cover;" />
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-box text-muted fs-4 d-flex align-items-center justify-content-center h-100"></i>
+                                    }
+                                </div>
+                                <div class="flex-grow-1 minw-0">
+                                    <div class="fw-semibold small">@(item.Product?.Name ?? $"#{item.ProductId}")</div>
+                                </div>
+                            </div>
+
+                            <!-- Star rating -->
+                            <div class="star-rating mb-2" data-product-id="@item.ProductId">
+                                <input type="radio" name="rating_@item.ProductId" id="star5_@item.ProductId" value="5" />
+                                <label for="star5_@item.ProductId" title="5 sao"><i class="bi bi-star-fill"></i></label>
+                                <input type="radio" name="rating_@item.ProductId" id="star4_@item.ProductId" value="4" />
+                                <label for="star4_@item.ProductId" title="4 sao"><i class="bi bi-star-fill"></i></label>
+                                <input type="radio" name="rating_@item.ProductId" id="star3_@item.ProductId" value="3" checked />
+                                <label for="star3_@item.ProductId" title="3 sao"><i class="bi bi-star-fill"></i></label>
+                                <input type="radio" name="rating_@item.ProductId" id="star2_@item.ProductId" value="2" />
+                                <label for="star2_@item.ProductId" title="2 sao"><i class="bi bi-star-fill"></i></label>
+                                <input type="radio" name="rating_@item.ProductId" id="star1_@item.ProductId" value="1" />
+                                <label for="star1_@item.ProductId" title="1 sao"><i class="bi bi-star-fill"></i></label>
+                            </div>
+
+                            <textarea class="form-control form-control-sm" rows="2" placeholder="Chia sẻ trải nghiệm của bạn..." style="border-radius:8px;"></textarea>
+                            <div class="mt-2">
+                                <input type="file" accept=".jpg,.jpeg,.png,.webp" class="form-control form-control-sm" style="border-radius:8px;max-width:260px;" />
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Để sau</button>
+                    <button type="button" class="btn btn-danger rounded-pill px-4" id="submitReviews">
+                        <i class="bi bi-send me-1"></i>Gửi đánh giá
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+<script>
+    @if (showReview)
+    {
+        @:document.addEventListener('DOMContentLoaded', function () {
+        @:    var modal = new bootstrap.Modal(document.getElementById('reviewModal'));
+        @:    modal.show();
+        @:});
+    }
+
+    document.getElementById('submitReviews')?.addEventListener('click', async function () {
+        var btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang gửi...';
+
+        var items = document.querySelectorAll('[data-product-id]');
+        var errors = [];
+
+        for (var el of items) {
+            var productId = el.dataset.productId;
+            var rating = el.querySelector('.star-rating input:checked');
+            var content = el.querySelector('textarea');
+            var fileInput = el.querySelector('input[type="file"]');
+            var val = rating ? parseInt(rating.value) : 3;
+            var txt = content ? content.value.trim() : '';
+
+            var formData = new FormData();
+            formData.append('productId', productId);
+            formData.append('rating', val);
+            formData.append('content', txt);
+            if (fileInput && fileInput.files[0]) {
+                formData.append('imageFile', fileInput.files[0]);
+            }
+
+            try {
+                await fetch('@Url.Action("AddReview")', { method: 'POST', body: formData });
+            } catch (e) {
+                errors.push(productId);
+            }
+        }
+
+        var modal = bootstrap.Modal.getInstance(document.getElementById('reviewModal'));
+        modal.hide();
+
+        var toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;top:20px;left:50%;transform:translateX(-50%);z-index:9999;padding:12px 24px;border-radius:12px;font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,.15);';
+        if (errors.length === 0) {
+            toast.className = 'alert alert-success border-0';
+            toast.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>Cảm ơn bạn đã đánh giá sản phẩm!';
+        } else {
+            toast.className = 'alert alert-danger border-0';
+            toast.innerHTML = '<i class="bi bi-exclamation-circle me-2"></i>Có lỗi xảy ra, vui lòng thử lại.';
+        }
+        document.body.appendChild(toast);
+        setTimeout(function () { toast.remove(); }, 4000);
+
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-send me-1"></i>Gửi đánh giá';
+    });
+</script>
+}
