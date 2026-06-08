@@ -308,35 +308,62 @@
 @media (max-width: 576px) {
   .pd-image-main,
   .pd-image-placeholder {
-    height: 240px;
+    height: 180px;
+    border-radius: 8px;
   }
+  .pd-image-placeholder { font-size: 50px; }
 
   .pd-info {
-    padding: 16px;
+    padding: 14px;
   }
 
   .pd-name {
-    font-size: 18px;
+    font-size: 16px;
   }
 
+  .pd-sku { font-size: 11px; }
+  .pd-meta-item { font-size: 12px; }
+
   .pd-price {
-    font-size: 22px;
+    font-size: 20px;
+  }
+
+  .pd-qty-input {
+    width: 64px;
+    height: 36px;
+    font-size: 14px;
   }
 
   .pd-actions {
     flex-direction: column;
+    gap: 8px;
   }
 
   .pd-actions .btn {
     width: 100%;
+    font-size: 13px;
+    padding: 10px;
   }
 
   .pd-highlights {
     grid-template-columns: 1fr;
+    gap: 8px;
   }
+  .pd-highlight-item { padding: 10px 12px; }
+  .pd-highlight-icon { width: 34px; height: 34px; font-size: 15px; }
+  .pd-highlight-text { font-size: 12px; }
 
-  .pd-specs-table td:first-child {
-    width: 120px;
+  .pd-specs-table td {
+    padding: 8px 10px;
     font-size: 13px;
   }
+  .pd-specs-table td:first-child {
+    width: 100px;
+    font-size: 12px;
+  }
+
+  .pd-intro { font-size: 14px; }
+  .pd-review-score-value { font-size: 28px; }
+  .pd-review-author { font-size: 13px; }
+  .pd-review-content { font-size: 13px; }
 }
