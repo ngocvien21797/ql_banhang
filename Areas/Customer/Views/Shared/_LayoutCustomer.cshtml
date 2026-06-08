@@ -70,13 +70,13 @@
                 <span class="sf-brand-text">MiniMart</span>
             </a>
 
-            <!-- Search desktop -->
-            <form class="sf-search d-none d-md-flex"
+            <!-- Search -->
+            <form class="sf-search"
                   method="get"
                   asp-area="Customer" asp-controller="Shop" asp-action="Index">
                 <div class="input-group">
                     <input class="form-control" name="q" value="@q" placeholder="Bạn tìm gì hôm nay?" />
-                    <button class="btn" type="submit"><i class="bi bi-search me-1"></i>Tìm</button>
+                    <button class="btn" type="submit"><i class="bi bi-search"></i></button>
                 </div>
             </form>
 
@@ -230,18 +230,6 @@
                     </a>
                 }
             </div>
-        </div>
-
-        <!-- Search mobile -->
-        <div class="mt-2 d-md-none">
-            <form method="get" asp-area="Customer" asp-controller="Shop" asp-action="Index">
-                <div class="sf-search w-100">
-                    <div class="input-group">
-                        <input class="form-control" name="q" value="@q" placeholder="Bạn tìm gì hôm nay?" />
-                        <button class="btn" type="submit"><i class="bi bi-search"></i></button>
-                    </div>
-                </div>
-            </form>
         </div>
     </div>
 </header>

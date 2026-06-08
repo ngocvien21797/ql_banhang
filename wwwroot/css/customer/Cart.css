@@ -163,6 +163,7 @@
   display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
+  line-clamp: 1;
   overflow: hidden;
 }
 .cart-product-meta { font-size: 13px; color: var(--cr-muted); }
@@ -205,6 +206,7 @@
   cursor: pointer;
   transition: all .15s ease;
   color: var(--cr-text);
+  -webkit-user-select: none;
   user-select: none;
 }
 .cart-qty .qty-btn:first-child { border-radius: 8px 0 0 8px; }
@@ -224,9 +226,10 @@
   color: var(--cr-text);
   outline: none;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 .cart-qty input::-webkit-inner-spin-button,
-.cart-qty input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.cart-qty input::-webkit-outer-spin-button { -webkit-appearance: none; appearance: none; margin: 0; }
 .cart-qty input:focus { background: var(--cr-red-bg); }
 
 /* ===================== REMOVE ===================== */
@@ -382,11 +385,28 @@
 }
 
 @media (max-width: 576px) {
-  .cart-page { padding: 16px 0 32px; }
-  .cart-header h2 { font-size: 22px; }
-  .cart-card { padding: 4px 16px; }
-  .cart-item:hover { margin: 0 -16px; padding: 16px; }
-  .cart-actions { flex-direction: column; }
+  .cart-page { padding: 12px 0 24px; }
+  .cart-page .container { padding: 0 18px; }
+  .cart-header h2 { font-size: 18px; }
+  .cart-header p { font-size: 12px; }
+  .cart-card { padding: 4px 12px; }
+  .cart-item:hover { margin: 0 -12px; padding: 12px; }
+  .cart-product-name { font-size: 13px; }
+  .cart-product-meta { font-size: 11px; }
+  .cart-stock { font-size: 11px; }
+  .cart-price, .cart-total { font-size: 14px; }
+  .cart-thumb { width: 52px; height: 52px; }
+  .cart-qty .qty-btn { width: 30px; height: 30px; font-size: 13px; }
+  .cart-qty input { width: 40px; height: 30px; font-size: 13px; }
+  .cart-remove-btn { width: 32px; height: 32px; font-size: 14px; }
+  .cart-actions { flex-direction: column; gap: 8px; }
   .cart-actions .btn,
-  .cart-actions button { width: 100%; justify-content: center; }
+  .cart-actions button { width: 100%; justify-content: center; font-size: 13px; padding: 8px 14px; }
+  .cart-summary { padding: 16px; }
+  .cart-summary h4 { font-size: 15px; }
+  .cart-summary .summary-row span { font-size: 12px; }
+  .cart-summary .summary-row strong { font-size: 13px; }
+  .cart-summary .summary-total { font-size: 17px; }
+  .checkout-btn { font-size: 14px; padding: 12px; }
+  .summary-note { font-size: 12px; }
 }

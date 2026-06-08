@@ -17,89 +17,85 @@
         <div class="alert alert-danger alert-dismissible fade show rounded-3">@TempData["Error"]</div>
     }
 
-    <div class="row g-4">
-        <div class="col-lg-7">
-            <form method="post" enctype="multipart/form-data" class="profile-card">
-                <div class="profile-cover-wrap">
-                    <div class="profile-avatar-wrap" onclick="document.getElementById('avatarInput').click()" title="Nhấn để đổi ảnh đại diện">
-                        @if (!string.IsNullOrWhiteSpace(Model.AvatarPath))
-                        {
-                            <img src="@Model.AvatarPath" alt="Avatar" id="avatarPreview" />
-                        }
-                        else
-                        {
-                            <div class="avatar-placeholder">@Model.Name.Substring(0, 1).ToUpper()</div>
-                        }
-                    </div>
-                    <input type="file" id="avatarInput" name="avatarFile" accept="image/*" onchange="previewAvatar(this)" />
+    <form method="post" enctype="multipart/form-data" class="profile-card">
+        <div class="profile-avatar-section">
+            <div class="profile-avatar-wrap" onclick="document.getElementById('avatarInput').click()" title="Nhấn để đổi ảnh đại diện">
+                @if (!string.IsNullOrWhiteSpace(Model.AvatarPath))
+                {
+                    <img src="@Model.AvatarPath" alt="Avatar" id="avatarPreview" />
+                }
+                else
+                {
+                    <div class="avatar-placeholder">@Model.Name.Substring(0, 1).ToUpper()</div>
+                }
+                <div class="avatar-overlay">
+                    <i class="bi bi-camera-fill"></i>
                 </div>
-
-                <div class="profile-head">
-                    <h4>@Model.Name</h4>
-                    <small><i class="bi bi-envelope me-1"></i>@ViewBag.Email</small>
-                </div>
-
-                <div class="profile-body">
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            <label class="form-label">Họ tên</label>
-                            <input class="form-control" name="Name" value="@Model.Name" required />
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Số điện thoại</label>
-                            <input class="form-control" name="Phone" value="@Model.Phone" />
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label">Email</label>
-                            <input class="form-control" name="Email" value="@Model.Email" placeholder="email@example.com" />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Ngày sinh</label>
-                            <input class="form-control" name="DateOfBirth" type="date" value="@Model.DateOfBirth?.ToString("yyyy-MM-dd")" />
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label">Giới tính</label>
-                            <select class="form-select" name="Gender">
-                                <option value="">-- Chọn --</option>
-                                <option value="Nam" selected="@(Model.Gender == "Nam")">Nam</option>
-                                <option value="Nữ" selected="@(Model.Gender == "Nữ")">Nữ</option>
-                                <option value="Khác" selected="@(Model.Gender == "Khác")">Khác</option>
-                            </select>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label">Địa chỉ</label>
-                            <input class="form-control" name="Address" value="@Model.Address" placeholder="Nhập địa chỉ..." />
-                        </div>
-                    </div>
-
-                    <div class="d-flex gap-2 mt-4">
-                        <button class="btn btn-danger flex-fill"><i class="bi bi-check-lg me-2"></i>Lưu thay đổi</button>
-                        <a class="btn btn-outline-danger" asp-controller="Addresses" asp-action="Index" title="Sổ địa chỉ">
-                            <i class="bi bi-bookmark"></i>
-                        </a>
-                    </div>
-                </div>
-            </form>
+            </div>
+            <input type="file" id="avatarInput" name="avatarFile" accept="image/*" onchange="previewAvatar(this)" />
+            <h4 class="profile-name">@Model.Name</h4>
+            <small class="profile-email"><i class="bi bi-envelope me-1"></i>@ViewBag.Email</small>
         </div>
 
-        <div class="col-lg-5">
-            <div class="password-card">
-                <h5 class="fw-bold mb-4"><i class="bi bi-key me-2 text-danger"></i>Đổi mật khẩu</h5>
-                <form method="post" asp-action="ChangePassword">
-                    <div class="mb-3">
-                        <label class="form-label">Mật khẩu hiện tại</label>
-                        <input type="password" class="form-control" name="currentPassword" required />
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Mật khẩu mới</label>
-                        <input type="password" class="form-control" name="newPassword" required />
-                    </div>
-                    <button class="btn btn-outline-danger w-100">
-                        <i class="bi bi-arrow-repeat me-2"></i>Đổi mật khẩu
-                    </button>
-                </form>
+        <div class="profile-body">
+            <h5 class="profile-section-title"><i class="bi bi-person me-2"></i>Thông tin cá nhân</h5>
+
+            <div class="row g-3">
+                <div class="col-12">
+                    <label class="form-label">Họ tên</label>
+                    <input class="form-control" name="Name" value="@Model.Name" required />
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Số điện thoại</label>
+                    <input class="form-control" name="Phone" value="@Model.Phone" type="tel" />
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Email</label>
+                    <input class="form-control" name="Email" value="@Model.Email" placeholder="email@example.com" type="email" />
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Ngày sinh</label>
+                    <input class="form-control" name="DateOfBirth" type="date" value="@Model.DateOfBirth?.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-6">
+                    <label class="form-label">Giới tính</label>
+                    <select class="form-select" name="Gender">
+                        <option value="">-- Chọn --</option>
+                        <option value="Nam" selected="@(Model.Gender == "Nam")">Nam</option>
+                        <option value="Nữ" selected="@(Model.Gender == "Nữ")">Nữ</option>
+                        <option value="Khác" selected="@(Model.Gender == "Khác")">Khác</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <label class="form-label">Địa chỉ</label>
+                    <input class="form-control" name="Address" value="@Model.Address" placeholder="Nhập địa chỉ..." />
+                </div>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button class="btn btn-danger btn-save"><i class="bi bi-check-lg me-2"></i>Lưu thay đổi</button>
+                <a class="btn btn-outline-danger" asp-controller="Addresses" asp-action="Index">
+                    <i class="bi bi-bookmark me-2"></i>Sổ địa chỉ
+                </a>
             </div>
         </div>
+    </form>
+
+    <div class="password-card mt-3">
+        <h5 class="password-card-title"><i class="bi bi-key me-2"></i>Đổi mật khẩu</h5>
+        <form method="post" asp-action="ChangePassword">
+            <div class="mb-3">
+                <label class="form-label">Mật khẩu hiện tại</label>
+                <input type="password" class="form-control" name="currentPassword" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Mật khẩu mới</label>
+                <input type="password" class="form-control" name="newPassword" required />
+            </div>
+            <button class="btn btn-outline-danger w-100">
+                <i class="bi bi-arrow-repeat me-2"></i>Đổi mật khẩu
+            </button>
+        </form>
     </div>
 </div>
 
@@ -112,7 +108,7 @@ function previewAvatar(input) {
             var preview = document.getElementById('avatarPreview');
             var wrap = document.querySelector('.profile-avatar-wrap');
             if (!preview) {
-                wrap.innerHTML = '<img id="avatarPreview" src="' + e.target.result + '" alt="Avatar" />';
+                wrap.innerHTML = '<img id="avatarPreview" src="' + e.target.result + '" alt="Avatar" />' + '<div class="avatar-overlay"><i class="bi bi-camera-fill"></i></div>';
             } else {
                 preview.src = e.target.result;
             }

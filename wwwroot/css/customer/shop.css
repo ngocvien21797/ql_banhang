@@ -43,6 +43,9 @@ a:hover{color:var(--sf-primary-dark)}
 .sf-topbar .container{
   position:relative;
 }
+.sf-topbar .d-flex{
+  justify-content:space-between;
+}
 /* Scroll‑shrink modifier */
 .sf-topbar.scrolled{
   padding:4px 0;
@@ -155,6 +158,7 @@ a:hover{color:var(--sf-primary-dark)}
   display:flex;
   align-items:center;
   gap:15px;
+  margin-left:auto;
 }
 .sf-topbar-link{
   color:rgba(255,255,255,.9);
@@ -676,16 +680,116 @@ a:hover{color:var(--sf-primary-dark)}
   .product-price{font-size:18px}
   .sf-footer-card{padding:24px}
   .sf-footer-top{align-items:flex-start}
-  .sf-footer-bottom{flex-direction:column;align-items:flex-start;text-align:left}
+  .sf-footer-bottom{flex-direction:column;align-items:center;text-align:center}
   .sf-footer-grid{gap:20px}
+  .sf-footer-col{text-align:left}
+  .sf-footer-col:hover .sf-footer-h::after{width:50px}
+  .sf-footer-link{text-align:left}
 }
 
+/* ===== GLOBAL OVERFLOW PREVENTION ===== */
+.sf-main *{word-break:break-word;overflow-wrap:break-word}
+.sf-main .container,
+.sf-main .card-body,
+.sf-main .d-flex{min-width:0}
+
 @media(max-width:576px){
-  .sf-topbar .container{gap:8px}
-  .sf-search{max-width:180px;min-width:100px}
-  .sf-search .btn{padding:8px 12px;font-size:12px}
-  .sf-brand-text{display:none}
-  .product-card img{height:160px}
+  /* ===== TOPBAR ===== */
+  .sf-topbar{padding:5px 0}
+  .sf-topbar .container{gap:4px}
+  .sf-topbar .d-flex{gap:4px;flex-wrap:nowrap}
+  .sf-search{flex:1 1 auto;max-width:none;min-width:0}
+  .sf-search .input-group{border-radius:20px}
+  .sf-search .form-control{padding:6px 8px;font-size:12px}
+  .sf-search .btn{padding:5px 8px;font-size:11px}
+  .sf-brand-badge{width:30px;height:30px;font-size:14px}
+  .sf-brand-text{display:inline;font-size:14px}
+  .sf-topbar-right{gap:1px;flex-shrink:0}
+  .sf-topbar-link{padding:4px 4px}
+  .sf-topbar-link i{font-size:14px}
+  .sf-topbar-link span{display:none}
+
+  /* ===== PAGE TITLES (Cửa hàng, Yêu thích, Thông báo...) ===== */
+  h3{font-size:18px !important}
+  h4{font-size:16px !important}
+  .d-flex.justify-content-between.flex-wrap h3,
+  .d-flex.justify-content-between.flex-wrap h4{font-size:16px !important}
+  .d-flex.justify-content-between.flex-wrap .text-muted.small,
+  .d-flex.justify-content-between.flex-wrap .sf-muted{font-size:11px !important;white-space:normal}
+  .d-flex.justify-content-between.flex-wrap > div,
+  .d-flex.justify-content-between.flex-wrap > form{min-width:0;max-width:100%}
+
+  /* ===== ACTION BUTTONS (Giỏ hàng, Yêu thích, Đơn của tôi) ===== */
+  .d-flex.gap-2.flex-wrap .btn.sf-pill,
+  .d-flex.gap-3.flex-wrap .btn.sf-pill{font-size:11px;padding:4px 8px}
+  .d-flex.gap-2.flex-wrap .btn.sf-pill i,
+  .d-flex.gap-3.flex-wrap .btn.sf-pill i{font-size:12px;margin-right:3px}
+  .d-flex.gap-2.flex-wrap .btn-sm,
+  .d-flex.gap-3.flex-wrap .btn-sm{font-size:11px;padding:4px 8px}
+  .d-flex.gap-2.flex-wrap .btn-sm i,
+  .d-flex.gap-3.flex-wrap .btn-sm i{font-size:12px;margin-right:3px}
+
+  /* ===== PRODUCT CARDS ===== */
+  .product-card img{height:120px}
+  .product-card .card-body{padding:10px}
+  .product-card .card-title{font-size:13px;margin-bottom:4px}
+  .product-price{font-size:14px;gap:4px}
+  .product-old-price{font-size:11px}
+  .product-sale{font-size:10px;padding:3px 7px;top:6px;left:6px}
+  .product-rating i{font-size:11px}
+  .product-rating span{font-size:11px}
+  .sf-img[style*="height:220px"]{height:120px !important}
+  .sf-img[style*="height:220px"] img{height:120px !important}
+  .product-card .card-body a[style*="font-size:15px"]{font-size:13px !important}
+
+  /* ===== WISHLIST / NOTIFICATION / ADDRESSES ===== */
+  .text-center.py-5 i[style*="font-size:64px"],
+  .text-center.py-5 i[style*="font-size:48px"]{font-size:40px !important}
+  .text-center.py-5 h5{font-size:15px !important}
+  .text-center.py-5 p{font-size:12px !important}
+
+  /* ===== GENERAL ===== */
+  .card .card-body{padding:12px}
+  .card .card-title{font-size:14px}
+  .card .card-text{font-size:13px}
+  .sf-price{font-size:15px}
+  .sf-muted{font-size:12px}
+  .section-header h3{font-size:16px}
+  .section-header a{font-size:12px}
+  .category-pill{font-size:11px;padding:4px 10px}
+
+  /* ===== FOOTER ===== */
+  .sf-footer-wrap{padding:25px 0 0}
+  .sf-footer-col{text-align:left;margin-bottom:8px}
+  .sf-footer-link{text-align:left;font-size:12px;padding:4px 0}
+  .sf-footer-h::after{left:0;transform:none}
+  .sf-footer-bottom{flex-direction:column;align-items:center;text-align:center;gap:4px;font-size:12px;padding:14px 0}
+  .sf-footer-h{font-size:13px}
+  .sf-footer-text{font-size:12px}
+  .sf-footer-item{font-size:12px;gap:6px}
+  .sf-social-btn{width:30px!important;height:30px!important;font-size:12px!important}
+}
+
+@media(max-width:400px){
+  .sf-topbar{padding:4px 0}
+  .sf-topbar .d-flex{gap:2px}
+  .sf-topbar-link{padding:2px 3px}
+  .sf-topbar-link i{font-size:12px}
+  .sf-search .form-control{padding:5px 6px;font-size:11px}
+  .sf-search .btn{padding:4px 6px;font-size:11px}
+  .sf-brand-badge{width:26px;height:26px;font-size:12px}
+  .sf-brand-text{font-size:12px}
+  .product-card img{height:100px}
+  .product-card .card-body{padding:8px}
+  .product-card .card-title{font-size:12px}
+  .product-price{font-size:13px}
+  .product-sale{font-size:9px;padding:2px 6px;top:4px;left:4px}
+  .product-old-price{font-size:10px}
+  .product-rating i{font-size:10px}
+  .card .card-body{padding:8px}
+  .card .card-title{font-size:12px}
+  h3{font-size:16px !important}
+  h4{font-size:14px !important}
 }
 
 @media(min-width:769px){

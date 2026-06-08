@@ -56,6 +56,12 @@
 
 @media (max-width: 576px) {
   .news-card .card-img-top {
-    height: 160px;
+    height: 140px;
   }
+  .news-card .card-body { padding: 12px; }
+  .news-card .card-title { font-size: 14px; }
+  .news-card .card-text { font-size: 12px; }
+  .article-body { font-size: 14px; word-break: break-word; overflow-wrap: break-word; }
+  .article-summary { font-size: 13px; word-break: break-word; }
+  .btn-back-shop { font-size: 12px; padding: 6px 14px; white-space: nowrap; }
 }

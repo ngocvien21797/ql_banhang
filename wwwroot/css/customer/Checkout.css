@@ -768,17 +768,39 @@ textarea.checkout-input { resize: vertical; min-height: 80px; }
   .checkout-header h2 { font-size: 24px; }
 }
 @media (max-width: 576px) {
-  .checkout-page { padding: 16px 0 32px; }
+  .checkout-page { padding: 12px 0 24px; }
+  .checkout-page .container { padding: 0 18px; }
   .checkout-card,
-  .checkout-summary { padding: 16px 18px; border-radius: 8px; }
-  .checkout-header h2 { font-size: 21px; }
-  .checkout-header { margin-bottom: 22px; }
-  .section-title { font-size: 15px; margin-bottom: 16px; padding-bottom: 10px; }
-  .section-title i { width: 28px; height: 28px; font-size: 13px; }
+  .checkout-summary { padding: 14px 14px; border-radius: 8px; }
+  .checkout-header h2 { font-size: 18px; }
+  .checkout-header p { font-size: 13px; }
+  .checkout-header { margin-bottom: 16px; }
+  .section-title { font-size: 14px; margin-bottom: 12px; padding-bottom: 8px; }
+  .section-title i { width: 24px; height: 24px; font-size: 12px; }
+  .checkout-form .form-label { font-size: 12px; }
+  .checkout-input { font-size: 13px; padding: 8px 12px; }
+  .shipping-title { font-size: 13px; }
+  .shipping-desc { font-size: 12px; }
+  .shipping-fee-label { font-size: 13px; }
   .shipping-option,
-  .payment-option { padding: 13px 14px; }
-  .summary-thumb { width: 40px; height: 40px; font-size: 14px; }
-  .summary-total { font-size: 18px; }
+  .payment-option { padding: 12px 12px; gap: 10px; }
+  .payment-title { font-size: 13px; }
+  .payment-desc { font-size: 12px; }
+  .summary-name { font-size: 13px; }
+  .summary-meta { font-size: 11px; }
+  .summary-price { font-size: 13px; }
+  .summary-thumb { width: 36px; height: 36px; font-size: 12px; }
+  .summary-row span { font-size: 12px; }
+  .summary-row strong { font-size: 13px; }
+  .summary-total { font-size: 16px; }
+  .checkout-summary h4 { font-size: 15px; }
+  .checkout-submit-btn { font-size: 14px; padding: 12px; }
+  .checkout-note { font-size: 12px; }
+  .checkout-back-btn { font-size: 13px; padding: 10px; }
+  .info-card .info-title { font-size: 13px; }
+  .info-card .info-row { font-size: 12px; }
+  .voucher-btn { font-size: 12px; padding: 0 12px; }
+  .summary-item { gap: 8px; }
 }
 
 /* ============================================================
