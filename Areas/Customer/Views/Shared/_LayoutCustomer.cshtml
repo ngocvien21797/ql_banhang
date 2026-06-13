@@ -365,7 +365,6 @@
                 <h6 class="fw-bold mb-3 text-uppercase small" style="letter-spacing:1px;">Giới thiệu</h6>
                 <ul class="list-unstyled small">
                     <li class="mb-2"><a href="#" class="sf-footer-link">Về chúng tôi</a></li>
-                    <li class="mb-2"><a href="#" class="sf-footer-link">Tuyển dụng</a></li>
                     <li class="mb-2"><a href="#" class="sf-footer-link">Điều khoản</a></li>
                     <li class="mb-2"><a href="#" class="sf-footer-link">Bảo mật</a></li>
                 </ul>
@@ -374,7 +373,6 @@
             <div class="col-lg-2 col-6 sf-footer-col">
                 <h6 class="fw-bold mb-3 text-uppercase small" style="letter-spacing:1px;">Hỗ trợ</h6>
                 <ul class="list-unstyled small">
-                    <li class="mb-2"><a href="#" class="sf-footer-link"><i class="bi bi-question-circle me-1"></i>FAQ</a></li>
                     <li class="mb-2"><a href="#" class="sf-footer-link"><i class="bi bi-arrow-repeat me-1"></i>Đổi trả</a></li>
                     <li class="mb-2"><a href="#" class="sf-footer-link"><i class="bi bi-truck me-1"></i>Vận chuyển</a></li>
                     <li class="mb-2"><a href="#" class="sf-footer-link"><i class="bi bi-credit-card me-1"></i>Thanh toán</a></li>
@@ -415,123 +413,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
-<!-- Contact + Chatbot -->
-<a class="contact-btn" href="tel:0364921797" title="Gọi hotline">
-    <i class="bi bi-telephone-fill"></i>
-</a>
-<button class="chatbot-btn" id="chatbotBtn" onclick="toggleChat()">
-    <i class="bi bi-chat-dots"></i>
-    <i class="bi bi-x-lg"></i>
-</button>
-
-<div class="chatbot-panel" id="chatbotPanel">
-    <div class="chatbot-header">
-        <i class="bi bi-robot"></i> MiniMart Bot
-    </div>
-    <div class="chatbot-messages" id="chatbotMessages">
-        <div class="chatbot-msg bot">Chào bạn! Tôi là trợ lý của MiniMart. Bạn cần hỗ trợ gì?</div>
-    </div>
-    <div class="chatbot-actions" id="chatbotActions">
-        <button class="faq-btn" onclick="chatAnswer(0)">🛒 Hướng dẫn đặt hàng</button>
-        <button class="faq-btn" onclick="chatAnswer(1)">🚚 Chính sách vận chuyển</button>
-        <button class="faq-btn" onclick="chatAnswer(2)">🔄 Đổi trả & bảo hành</button>
-        <button class="faq-btn" onclick="chatAnswer(3)">💳 Thanh toán & hỗ trợ</button>
-    </div>
-    <div class="chatbot-input-wrap">
-        <input class="chatbot-input" id="chatInput" type="text" placeholder="Nhập tin nhắn..." />
-        <button type="button" class="chatbot-send" onclick="sendMessage()"><i class="bi bi-send"></i></button>
-    </div>
-</div>
-
-<script>
-const faqData = [
-    {
-        q: '🛒 Hướng dẫn đặt hàng',
-        a: 'Bạn chọn sản phẩm → thêm vào giỏ → bấm "Đặt hàng" → điền thông tin → chọn phương thức thanh toán → xác nhận. Đơn hàng sẽ được xử lý trong vòng 24h.'
-    },
-    {
-        q: '🚚 Chính sách vận chuyển',
-        a: 'Giao tiêu chuẩn: 30.000₫ (3-5 ngày).\nGiao tiết kiệm: 15.000₫ (5-7 ngày).\nMiễn phí ship cho đơn từ 1.000.000₫ (áp dụng mã FREESHIP).'
-    },
-    {
-        q: '🔄 Đổi trả & bảo hành',
-        a: 'Đổi trả trong 30 ngày nếu lỗi nhà sản xuất. Sản phẩm phải còn nguyên tem, hộp. Bảo hành chính hãng 12-24 tháng tuỳ sản phẩm.'
-    },
-    {
-        q: '💳 Thanh toán',
-        a: 'Chúng tôi hỗ trợ:\n• COD (Thanh toán khi nhận)\n• Chuyển khoản ngân hàng\n• Thanh toán tại cửa hàng\n\nLiên hệ hỗ trợ:\n📞 0364 921 797\n📧 support@minimart.vn'
-    }
-];
-
-function toggleChat() {
-    const btn = document.getElementById('chatbotBtn');
-    const panel = document.getElementById('chatbotPanel');
-    btn.classList.toggle('open');
-    panel.classList.toggle('open');
-}
-
-function chatAnswer(index) {
-    const msg = document.getElementById('chatbotMessages');
-    const data = faqData[index];
-    msg.innerHTML += '<div class="chatbot-msg user">' + data.q + '</div>';
-    msg.innerHTML += '<div class="chatbot-msg bot">' + data.a + '</div>';
-    msg.scrollTop = msg.scrollHeight;
-}
-
-var _sending = false;
-document.getElementById('chatInput').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && !e.repeat) { e.preventDefault(); sendMessage(); }
-});
-
-function sendMessage() {
-    if (_sending) return;
-    _sending = true;
-    setTimeout(function() { _sending = false; }, 500);
-    const input = document.getElementById('chatInput');
-    const text = input.value.trim();
-    if (!text) return;
-    const msg = document.getElementById('chatbotMessages');
-    msg.insertAdjacentHTML('beforeend', '<div class="chatbot-msg user">' + escapeHtml(text) + '</div>');
-    const reply = getBotReply(text);
-    setTimeout(function() {
-        msg.insertAdjacentHTML('beforeend', '<div class="chatbot-msg bot">' + reply + '</div>');
-        msg.scrollTop = msg.scrollHeight;
-    }, 400);
-    input.value = '';
-    msg.scrollTop = msg.scrollHeight;
-}
-
-function chatAnswer(index) {
-    const msg = document.getElementById('chatbotMessages');
-    const data = faqData[index];
-    msg.insertAdjacentHTML('beforeend', '<div class="chatbot-msg user">' + data.q + '</div>');
-    msg.insertAdjacentHTML('beforeend', '<div class="chatbot-msg bot">' + data.a + '</div>');
-    msg.scrollTop = msg.scrollHeight;
-}
-
-function getBotReply(text) {
-    const t = text.toLowerCase();
-    if (t.includes('đặt hàng') || t.includes('mua hàng') || t.includes('cách mua'))
-        return 'Bạn chọn sản phẩm → thêm vào giỏ → bấm "Đặt hàng" → điền thông tin → chọn thanh toán → xác nhận.';
-    if (t.includes('ship') || t.includes('vận chuyển') || t.includes('giao hàng') || t.includes('free ship'))
-        return 'Giao tiêu chuẩn (3-5 ngày): 30.000₫.\nGiao tiết kiệm (5-7 ngày): 15.000₫.\nMiễn phí ship đơn từ 1.000.000₫ với mã FREESHIP.';
-    if (t.includes('đổi') || t.includes('trả') || t.includes('bảo hành') || t.includes('lỗi'))
-        return 'Đổi trả trong 30 ngày nếu lỗi nhà sản xuất. Sản phẩm còn nguyên tem, hộp. Bảo hành 12-24 tháng.';
-    if (t.includes('thanh toán') || t.includes('chuyển khoản') || t.includes('cod') || t.includes('trả tiền'))
-        return 'Hỗ trợ: COD, chuyển khoản ngân hàng, thanh toán tại cửa hàng.\n\n📞 0364 921 797\n📧 support@minimart.vn';
-    if (t.includes('spam') || t.includes('xin chào') || t.includes('hello') || t.includes('hi') || t.includes('chào'))
-        return 'Chào bạn! Bạn cần hỗ trợ gì? Hãy chọn một mục bên dưới hoặc gõ câu hỏi của bạn.';
-    if (t.includes('cảm ơn') || t.includes('thanks'))
-        return 'Cảm ơn bạn! Nếu cần hỗ trợ thêm, cứ gõ nhé.';
-    return 'Cảm ơn bạn đã liên hệ! Để được hỗ trợ nhanh nhất, gọi 📞 0364 921 797 hoặc gửi email 📧 support@minimart.vn.\n\nBạn cũng có thể chọn câu hỏi bên dưới.';
-}
-
-function escapeHtml(text) {
-    const d = document.createElement('div');
-    d.textContent = text;
-    return d.innerHTML;
-}
-</script>
+<partial name="_ChatbotPartial" />
 <script>
     // Dynamic header: shrink on scroll
     (function() {

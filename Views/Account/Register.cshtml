@@ -5,74 +5,57 @@
 
 <div class="auth-page">
     <div class="auth-box" style="max-width:520px;">
-        <div class="text-center mb-4">
-            <div class="d-inline-flex align-items-center justify-content-center bg-danger text-white rounded-circle mb-3" style="width:64px;height:64px;">
-                <i class="bi bi-bag-check-fill fs-3"></i>
-            </div>
-            <h3 class="fw-bold mb-1">Đăng ký tài khoản</h3>
-            <p class="text-muted small">Tạo tài khoản để mua sắm tiện lợi hơn</p>
+        <div class="auth-header">
+            <div class="auth-logo"><i class="bi bi-bag-check-fill"></i></div>
+            <h2>Đăng ký tài khoản</h2>
+            <p>Tạo tài khoản để mua sắm tiện lợi hơn</p>
         </div>
 
         @if (ViewBag.Error != null)
         {
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>@ViewBag.Error
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
+            <div class="alert alert-danger">@ViewBag.Error</div>
         }
 
         <form method="post">
+            @Html.AntiForgeryToken()
             <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
 
+            <div class="form-group">
+                <label class="form-label">Tài khoản</label>
+                <input class="form-control" type="email" name="username" required placeholder="email@example.com" />
+            </div>
+
             <div class="row g-3">
-                <div class="col-12">
-                    <label class="form-label fw-medium small text-uppercase text-muted">Tài Khoản</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
-                        <input class="form-control border-start-0 bg-light" type="email" name="username" required placeholder="email@example.com" />
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Mật khẩu</label>
+                        <input type="password" class="form-control" name="password" required minlength="6" placeholder="Mật khẩu (ít nhất 6 ký tự)" />
                     </div>
                 </div>
-
                 <div class="col-md-6">
-                    <label class="form-label fw-medium small text-uppercase text-muted">Mật khẩu</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
-                        <input type="password" class="form-control border-start-0 bg-light" name="password" required placeholder="Mật khẩu" />
+                    <div class="form-group">
+                        <label class="form-label">Nhập lại mật khẩu</label>
+                        <input type="password" class="form-control" name="confirmPassword" required minlength="6" placeholder="Nhập lại mật khẩu" />
                     </div>
                 </div>
-
                 <div class="col-md-6">
-                    <label class="form-label fw-medium small text-uppercase text-muted">Nhập lại mật khẩu</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock-fill text-muted"></i></span>
-                        <input type="password" class="form-control border-start-0 bg-light" name="confirmPassword" required placeholder="Nhập lại mật khẩu" />
+                    <div class="form-group">
+                        <label class="form-label">Họ và tên</label>
+                        <input class="form-control" name="name" required placeholder="Họ và tên" />
                     </div>
                 </div>
-
                 <div class="col-md-6">
-                    <label class="form-label fw-medium small text-uppercase text-muted">Họ và tên</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-person-badge text-muted"></i></span>
-                        <input class="form-control border-start-0 bg-light" name="name" required placeholder="Họ và tên" />
-                    </div>
-                </div>
-
-                <div class="col-md-6">
-                    <label class="form-label fw-medium small text-uppercase text-muted">Số điện thoại</label>
-                    <div class="input-group">
-                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-telephone text-muted"></i></span>
-                        <input class="form-control border-start-0 bg-light" name="phone" placeholder="Số điện thoại" />
+                    <div class="form-group">
+                        <label class="form-label">Số điện thoại</label>
+                        <input class="form-control" name="phone" placeholder="Số điện thoại" />
                     </div>
                 </div>
             </div>
 
-            <button class="btn btn-danger w-100 py-2 fw-semibold mt-4 mb-3">
-                <i class="bi bi-person-plus me-2"></i>Đăng ký
-            </button>
+            <button type="submit" class="auth-btn" style="margin-top:18px;"><i class="bi bi-person-plus"></i>Đăng ký</button>
 
-            <div class="text-center">
-                <span class="text-muted small">Đã có tài khoản?</span>
-                <a asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl" class="fw-semibold text-danger text-decoration-none">Đăng nhập</a>
+            <div class="auth-footer">
+                Đã có tài khoản? <a asp-action="Login" asp-route-returnUrl="@ViewBag.ReturnUrl">Đăng nhập</a>
             </div>
         </form>
     </div>

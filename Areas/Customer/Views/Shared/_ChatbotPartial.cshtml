@@ -1,0 +1,93 @@
+<!-- Contact + Chatbot -->
+<a class="zalo-btn" href="https://zalo.me/0364921797" target="_blank" title="Chat Zalo">
+    <span style="font-weight:800;font-size:20px;font-family:sans-serif;line-height:1">Z</span>
+</a>
+<a class="contact-btn" href="tel:0364921797" title="Gọi hotline">
+    <i class="bi bi-telephone-fill"></i>
+</a>
+<button class="chatbot-btn" id="chatbotBtn" onclick="toggleChat()">
+    <i class="bi bi-chat-dots"></i>
+    <i class="bi bi-x-lg"></i>
+</button>
+
+<div class="chatbot-panel" id="chatbotPanel">
+    <div class="chatbot-header">
+        <i class="bi bi-robot"></i> MiniMart Bot
+    </div>
+    <div class="chatbot-messages" id="chatbotMessages">
+        <div class="chatbot-msg bot">Chào bạn! Tôi là trợ lý của MiniMart. Bạn cần hỗ trợ gì?</div>
+    </div>
+    <div class="chatbot-actions" id="chatbotActions">
+        <button class="suggest-btn" onclick="suggestAsk(this)">Hướng dẫn đặt hàng</button>
+        <button class="suggest-btn" onclick="suggestAsk(this)">Chính sách vận chuyển</button>
+        <button class="suggest-btn" onclick="suggestAsk(this)">Đổi trả & bảo hành</button>
+        <button class="suggest-btn" onclick="suggestAsk(this)">Phương thức thanh toán</button>
+        <button class="suggest-btn" onclick="suggestAsk(this)">Cách kiểm tra đơn hàng</button>
+        <button class="suggest-btn" onclick="suggestAsk(this)">Chính sách bảo mật</button>
+    </div>
+    <div class="chatbot-input-wrap">
+        <input class="chatbot-input" id="chatInput" type="text" placeholder="Nhập tin nhắn..." />
+        <button type="button" class="chatbot-send" onclick="sendMessage()"><i class="bi bi-send"></i></button>
+    </div>
+</div>
+
+<script>
+function suggestAsk(btn) {
+    const input = document.getElementById('chatInput');
+    input.value = btn.textContent;
+    sendMessage();
+}
+
+function toggleChat() {
+    const btn = document.getElementById('chatbotBtn');
+    const panel = document.getElementById('chatbotPanel');
+    btn.classList.toggle('open');
+    panel.classList.toggle('open');
+}
+
+var _sending = false;
+document.addEventListener('DOMContentLoaded', function() {
+    const input = document.getElementById('chatInput');
+    if (input) {
+        input.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.repeat) { e.preventDefault(); sendMessage(); }
+        });
+    }
+});
+
+function sendMessage() {
+    if (_sending) return;
+    _sending = true;
+    setTimeout(function() { _sending = false; }, 500);
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+    const msg = document.getElementById('chatbotMessages');
+    msg.insertAdjacentHTML('beforeend', '<div class="chatbot-msg user">' + escapeHtml(text) + '</div>');
+    msg.scrollTop = msg.scrollHeight;
+    input.value = '';
+
+    fetch('/Chatbot/Ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        setTimeout(function() {
+            msg.insertAdjacentHTML('beforeend', '<div class="chatbot-msg bot">' + escapeHtml(data.reply) + '</div>');
+            msg.scrollTop = msg.scrollHeight;
+        }, 400);
+    })
+    .catch(function() {
+        msg.insertAdjacentHTML('beforeend', '<div class="chatbot-msg bot">Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại.</div>');
+        msg.scrollTop = msg.scrollHeight;
+    });
+}
+
+function escapeHtml(text) {
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+}
+</script>

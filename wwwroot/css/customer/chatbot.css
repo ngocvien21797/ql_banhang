@@ -28,6 +28,35 @@
   100% { box-shadow: 0 4px 16px rgba(40,167,69,.35); }
 }
 
+/* ===== Zalo Button ===== */
+.zalo-btn {
+  position: fixed;
+  bottom: 160px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #0068ff;
+  color: #fff;
+  text-decoration: none;
+  box-shadow: 0 4px 16px rgba(0,104,255,.35);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform .2s ease;
+  animation: zaloPulse 2s infinite;
+}
+.zalo-btn:hover {
+  transform: scale(1.1);
+  color: #fff;
+}
+@keyframes zaloPulse {
+  0% { box-shadow: 0 4px 16px rgba(0,104,255,.35); }
+  50% { box-shadow: 0 4px 24px rgba(0,104,255,.55); }
+  100% { box-shadow: 0 4px 16px rgba(0,104,255,.35); }
+}
+
 @media (max-width: 480px) {
   .contact-btn {
     bottom: 84px;
@@ -35,6 +64,12 @@
     width: 48px;
     height: 48px;
     font-size: 20px;
+  }
+  .zalo-btn {
+    bottom: 144px;
+    right: 16px;
+    width: 48px;
+    height: 48px;
   }
 }
 
@@ -142,7 +177,7 @@
   overflow-y: auto;
 }
 
-.chatbot-actions .faq-btn {
+.chatbot-actions .suggest-btn {
   display: block;
   width: 100%;
   padding: 8px 12px;
@@ -156,13 +191,13 @@
   color: #333;
 }
 
-.chatbot-actions .faq-btn:hover {
+.chatbot-actions .suggest-btn:hover {
   border-color: #d70018;
   background: #fff5f5;
   color: #d70018;
 }
 
-.chatbot-actions .faq-btn:last-child { margin-bottom: 0; }
+.chatbot-actions .suggest-btn:last-child { margin-bottom: 0; }
 
 /* Chat input */
 .chatbot-input-wrap {

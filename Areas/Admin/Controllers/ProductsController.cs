@@ -82,7 +82,7 @@ public class ProductsController : Controller
             return View(product);
         }
 
-        // Upload ảnh (nếu có)
+        // Upload ảnh 
         if (imageFile != null && imageFile.Length > 0)
         {
             var saveResult = await SaveProductImageAsync(imageFile);
@@ -210,7 +210,6 @@ public class ProductsController : Controller
         var product = await _db.Products.FindAsync(id);
         if (product == null) return NotFound();
 
-        // Xoá ảnh file trước
         DeleteImageIfExists(product.ImagePath);
 
         _db.Products.Remove(product);

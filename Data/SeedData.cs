@@ -6,10 +6,6 @@ public static class SeedData
 {
     public static void Seed(SalesDbContext db)
     {
-        // ==================== USERS ====================
-        if (!db.Users.Any(x => x.Username == "admin"))
-            db.Users.Add(new User { Username = "admin", Password = "123", Role = 1 });
-
         // ==================== CATEGORIES ====================
         if (!db.Categories.Any())
         {
@@ -423,15 +419,6 @@ public static class SeedData
             );
             db.SaveChanges();
         }
-
-        // ==================== TÀI KHOẢN KHÁCH HÀNG DEMO ====================
-        var demoCustomer = db.Customers.FirstOrDefault(x => x.Name == "Khách hàng demo")
-            ?? db.Customers.First();
-        if (demoCustomer.WalletBalance <= 0)
-            demoCustomer.WalletBalance = 50000000;
-
-        if (!db.Users.Any(x => x.Username == "khach"))
-            db.Users.Add(new User { Username = "khach", Password = "123", Role = 2, CustomerId = demoCustomer.Id });
 
         db.SaveChanges();
     }

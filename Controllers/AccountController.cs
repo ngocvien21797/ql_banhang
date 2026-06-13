@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using QuanLyBanHang.Data;
 using QuanLyBanHang.Models;
+using BCrypt.Net;
 
 namespace QuanLyBanHang.Controllers;
 
@@ -35,11 +36,25 @@ public class AccountController : Controller
 
     [HttpPost]
     [AllowAnonymous]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(string username, string password, string? returnUrl = null)
     {
         username = (username ?? "").Trim();
 
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username && u.Password == password);
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            ViewBag.Error = "Vui lòng nhập tên đăng nhập.";
+            ViewBag.ReturnUrl = returnUrl;
+            return View();
+        }
+        if (string.IsNullOrWhiteSpace(password))
+        {
+            ViewBag.Error = "Vui lòng nhập mật khẩu.";
+            ViewBag.ReturnUrl = returnUrl;
+            return View();
+        }
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
         if (user == null)
         {
             ViewBag.Error = "Sai tài khoản hoặc mật khẩu!";
@@ -47,6 +62,29 @@ public class AccountController : Controller
                 ? Url.Action("Index", "Shop", new { area = "Customer" })
                 : returnUrl;
             return View();
+        }
+
+        // Hỗ trợ cả mật khẩu cũ (plaintext) và mới (BCrypt)
+        bool passwordOk;
+        if (user.Password.StartsWith("$2"))
+            passwordOk = BCrypt.Net.BCrypt.Verify(password, user.Password);
+        else
+            passwordOk = user.Password == password;
+
+        if (!passwordOk)
+        {
+            ViewBag.Error = "Sai tài khoản hoặc mật khẩu!";
+            ViewBag.ReturnUrl = string.IsNullOrWhiteSpace(returnUrl)
+                ? Url.Action("Index", "Shop", new { area = "Customer" })
+                : returnUrl;
+            return View();
+        }
+
+        // Nếu còn plaintext, nâng cấp lên BCrypt
+        if (!user.Password.StartsWith("$2"))
+        {
+            user.Password = BCrypt.Net.BCrypt.HashPassword(password);
+            await _db.SaveChangesAsync();
         }
 
         var claims = new List<Claim>
@@ -89,6 +127,7 @@ public class AccountController : Controller
     // Đăng ký đơn giản cho KH (Role = 2)
     [HttpPost]
     [AllowAnonymous]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Register(
         string username,
         string password,
@@ -102,6 +141,15 @@ public class AccountController : Controller
             string.IsNullOrWhiteSpace(name))
         {
             ViewBag.Error = "Vui lòng nhập đầy đủ thông tin bắt buộc.";
+            ViewBag.ReturnUrl = string.IsNullOrWhiteSpace(returnUrl)
+                ? Url.Action("Index", "Shop", new { area = "Customer" })
+                : returnUrl;
+            return View();
+        }
+
+        if (password.Length < 6)
+        {
+            ViewBag.Error = "Mật khẩu phải có ít nhất 6 ký tự.";
             ViewBag.ReturnUrl = string.IsNullOrWhiteSpace(returnUrl)
                 ? Url.Action("Index", "Shop", new { area = "Customer" })
                 : returnUrl;
@@ -142,7 +190,7 @@ public class AccountController : Controller
         var user = new User
         {
             Username = username,
-            Password = password,
+            Password = BCrypt.Net.BCrypt.HashPassword(password),
             Role = 2,
             CustomerId = customer.Id
         };
