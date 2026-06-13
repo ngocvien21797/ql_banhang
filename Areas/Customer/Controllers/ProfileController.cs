@@ -5,6 +5,7 @@ using QuanLyBanHang.Data;
 using QuanLyBanHang.Models;
 using System.Security.Claims;
 using CustomerEntity = QuanLyBanHang.Models.Customer;
+using BCrypt.Net;
 
 namespace QuanLyBanHang.Areas.Customer.Controllers;
 [Area("Customer")]
@@ -77,13 +78,19 @@ public class ProfileController : Controller
         var user = await _db.Users.FindAsync(uid);
         if (user == null) return NotFound();
 
-        if (user.Password != currentPassword)
+        bool passwordOk;
+        if (user.Password.StartsWith("$2"))
+            passwordOk = BCrypt.Net.BCrypt.Verify(currentPassword, user.Password);
+        else
+            passwordOk = user.Password == currentPassword;
+
+        if (!passwordOk)
         {
             TempData["Error"] = "Mật khẩu hiện tại không đúng.";
             return RedirectToAction(nameof(Index));
         }
 
-        user.Password = newPassword;
+        user.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
         await _db.SaveChangesAsync();
 
         TempData["Ok"] = "Đổi mật khẩu thành công!";

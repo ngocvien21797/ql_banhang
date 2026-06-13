@@ -109,3 +109,4 @@
 /Users/ngocvien/Downloads/QuanLyBanHang_2Roles_Areas 3/bin/Debug/net8.0/System.Security.Cryptography.Pkcs.dll
 /Users/ngocvien/Downloads/QuanLyBanHang_2Roles_Areas 3/bin/Debug/net8.0/runtimes/win/lib/net8.0/System.Security.Cryptography.Pkcs.dll
 /Users/ngocvien/Downloads/QuanLyBanHang_2Roles_Areas 3/obj/Debug/net8.0/QuanLyBanHang.sourcelink.json
+/Users/ngocvien/Downloads/QuanLyBanHang_2Roles_Areas 3/bin/Debug/net8.0/BCrypt-Net-Next.dll

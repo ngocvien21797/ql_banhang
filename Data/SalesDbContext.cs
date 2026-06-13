@@ -29,6 +29,7 @@ public class SalesDbContext : DbContext
     public DbSet<Article> Articles => Set<Article>();
     public DbSet<PromotionUsage> PromotionUsages => Set<PromotionUsage>();
 
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<User>()
